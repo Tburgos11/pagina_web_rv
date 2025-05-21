@@ -1,8 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 import json
+import datetime
+
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
+app.secret_key = "clave_secreta"  # Necesario para sesiones
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
 
 # Inicializar bases de datos y tablas
 def init_db():
@@ -47,6 +56,16 @@ def init_registros_db():
             );
         """)
 
+def init_trabajadores_db():
+    with sqlite3.connect("trabajadores.db") as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS trabajadores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE,
+                password TEXT
+            );
+        """)
+
 TODAS_LAS_TAREAS = [
     "Revisión de documentos",
     "Llamada al cliente",
@@ -55,6 +74,7 @@ TODAS_LAS_TAREAS = [
 ]
 
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
     if request.method == "POST":
         nombre = request.form["nombre"]
@@ -74,6 +94,7 @@ def index():
     return render_template("index.html", servicios=servicios)
 
 @app.route("/usuarios")
+@login_required
 def mostrar_usuarios():
     with sqlite3.connect("database.db") as conn:
         cursor = conn.cursor()
@@ -93,12 +114,65 @@ def mostrar_usuarios():
     return render_template("usuarios.html", usuarios=usuarios_normalizados)
 
 @app.route("/registros")
+@login_required
 def mostrar_registros():
+    estado = request.args.get("estado", "")
+    servicio = request.args.get("servicio", "")
+    buscar = request.args.get("buscar", "")
+    ordenar = request.args.get("ordenar", "id")
+    direccion = request.args.get("direccion", "asc")
+    fecha_inicio = request.args.get("fecha_inicio", "")
+    fecha_fin = request.args.get("fecha_fin", "")
+
+    query = "SELECT * FROM registros WHERE 1=1"
+    params = []
+
+    if estado:
+        query += " AND estado = ?"
+        params.append(estado)
+    if servicio:
+        query += " AND servicio = ?"
+        params.append(servicio)
+    if buscar:
+        query += " AND nombre LIKE ?"
+        params.append(f"%{buscar}%")
+    if fecha_inicio:
+        query += " AND fecha_entrega >= ?"
+        params.append(fecha_inicio)
+    if fecha_fin:
+        query += " AND fecha_entrega <= ?"
+        params.append(fecha_fin)
+
+    columnas_validas = ["id", "nombre", "cantidad", "servicio", "estado", "progreso", "fecha_entrega"]
+    if ordenar not in columnas_validas:
+        ordenar = "id"
+    if direccion not in ["asc", "desc"]:
+        direccion = "asc"
+
+    query += f" ORDER BY {ordenar} {direccion}"
+
     with sqlite3.connect("registros.db") as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM registros")
+        cursor.execute(query, params)
         registros = cursor.fetchall()
-    return render_template("registros.html", registros=registros)
+        cursor.execute("SELECT DISTINCT estado FROM registros")
+        estados = [row[0] for row in cursor.fetchall()]
+        cursor.execute("SELECT DISTINCT servicio FROM registros")
+        servicios = [row[0] for row in cursor.fetchall()]
+
+    return render_template(
+        "registros.html",
+        registros=registros,
+        estados=estados,
+        servicios=servicios,
+        estado_actual=estado,
+        servicio_actual=servicio,
+        buscar_actual=buscar,
+        ordenar_actual=ordenar,
+        direccion_actual=direccion,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin
+    )
 
 @app.route('/editar_observaciones/<int:id>', methods=['GET', 'POST'])
 def editar_observaciones(id):
@@ -133,6 +207,7 @@ def mover_a_registros(id):
     return redirect(url_for('mostrar_usuarios'))
 
 @app.route('/progreso/<int:usuario_id>', methods=['GET', 'POST'])
+@login_required
 def progreso(usuario_id):
     TODAS_LAS_TAREAS = [
         "Revisión de documentos",
@@ -173,14 +248,18 @@ def progreso(usuario_id):
                 cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = ?", (usuario_id,))
                 usuario = cursor.fetchone()
                 if usuario:
+                    fecha_entrega = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     with sqlite3.connect("registros.db") as conn_reg:
                         conn_reg.execute("""
-                            INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones)
-                            VALUES (?, ?, ?, ?, ?)
-                        """, (usuario[0], usuario[1], usuario[2], "Completado", usuario[3]))
+                            INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones, fecha_entrega)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        """, (usuario[0], usuario[1], usuario[2], "Completado", usuario[3], fecha_entrega))
                     cursor.execute("DELETE FROM datos WHERE id = ?", (usuario_id,))
                 conn.commit()
-            return redirect(url_for('mostrar_registros'))
+                return redirect(url_for('mostrar_registros'))
+            else:
+                conn.commit()
+                return redirect(url_for('mostrar_usuarios'))
 
     with sqlite3.connect("database.db") as conn:
         cursor = conn.cursor()
@@ -197,7 +276,48 @@ def progreso(usuario_id):
         usuario_id=usuario_id
     )
 
+class Trabajador(UserMixin):
+    def __init__(self, id, username, password):
+        self.id = id
+        self.username = username
+        self.password = password
+
+@login_manager.user_loader
+def load_user(user_id):
+    with sqlite3.connect("trabajadores.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, username, password FROM trabajadores WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        if user:
+            return Trabajador(*user)
+    return None
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        with sqlite3.connect("trabajadores.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, username, password FROM trabajadores WHERE username = ?", (username,))
+            user = cursor.fetchone()
+            if user and check_password_hash(user[2], password):
+                login_user(Trabajador(*user))
+                return redirect(url_for("index"))
+            else:
+                flash("Usuario o contraseña incorrectos")
+    return render_template("login.html")
+
+@app.route("/logout", methods=["GET", "POST"])
+@login_required
+def logout():
+    logout_user()
+    if request.method == "POST":
+        return '', 204
+    return redirect(url_for("login"))
+
 if __name__ == "__main__":
     init_db()
     init_registros_db()
+    init_trabajadores_db()  
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -5,6 +5,12 @@
     <title>Editar Observaciones</title>
 </head>
 <body>
+    <!-- Puedes poner esto justo después de <body> en editar_observaciones.html y otras plantillas -->
+<div style="text-align:right; margin-bottom: 10px;">
+    <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
+        <button type="submit">Cerrar sesión</button>
+    </form>
+</div>
     <h1>Editar Observaciones para registro #{{ id }}</h1>
     <form method="POST">
         <textarea name="observaciones" rows="5" cols="40">{{ observacion }}</textarea><br><br>

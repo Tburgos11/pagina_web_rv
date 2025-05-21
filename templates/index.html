@@ -5,6 +5,12 @@
     <title>Registrar Trabajo</title>
 </head>
 <body>
+    <!-- Puedes poner esto justo después de <body> en editar_observaciones.html y otras plantillas -->
+<div style="text-align:right; margin-bottom: 10px;">
+    <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
+        <button type="submit">Cerrar sesión</button>
+    </form>
+</div>
     <h1>Registrar Trabajo</h1>
     <form method="POST">
         <label for="nombre">Nombre de cliente:</label><br/>

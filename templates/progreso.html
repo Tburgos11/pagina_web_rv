@@ -24,6 +24,12 @@
     </style>
 </head>
 <body>
+    <!-- Puedes poner esto justo después de <body> en editar_observaciones.html y otras plantillas -->
+<div style="text-align:right; margin-bottom: 10px;">
+    <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
+        <button type="submit">Cerrar sesión</button>
+    </form>
+</div>
     <h1>Progreso de Tareas</h1>
     <div class="progress-bar">
         <div class="progress-bar-fill" id="progressFill"></div>

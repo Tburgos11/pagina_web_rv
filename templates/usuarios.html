@@ -1,58 +1,91 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <title>Trabajos en progreso</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         .progress-bar {
-            background-color: #ddd;
-            border-radius: 5px;
-            width: 100px;
+            width: 120px;
             height: 20px;
-            cursor: pointer;
+            background-color: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            display: inline-block;
         }
         .progress-bar-fill {
-            background-color: #4caf50;
             height: 100%;
-            border-radius: 5px;
-            width: 0%;
-            transition: width 0.5s;
+            background-color: #4CAF50;
+            text-align: center;
+            color: white;
+            line-height: 20px;
+            white-space: nowrap;
+            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <h1>Trabajos en progreso</h1>
-    <table border="1" cellpadding="5" cellspacing="0">
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Cantidad</th>
-            <th>Servicio</th>
-            <th>Estado</th>
-            <th>Progreso</th>
-            <th>Observaciones</th>
-            <!-- Eliminada la columna Acciones -->
-        </tr>
-        {% for usuario in usuarios %}
-        <tr>
-            <td>{{ usuario[0] }}</td>
-            <td>{{ usuario[1] }}</td>
-            <td>{{ usuario[2] }}</td>
-            <td>{{ usuario[3] }}</td>
-            <td>{{ usuario[4] }}</td>
-            <td>
-                <div class="progress-bar" onclick="window.location.href='/progreso/{{ usuario[0] }}'" style="cursor:pointer;">
-                    <div class="progress-bar-fill" style="width: {{ usuario[5] }}%;"></div>
+<div style="text-align:right; margin-bottom: 10px;">
+    <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
+        <button type="submit">Cerrar sesión</button>
+    </form>
+</div>
+<h1>Trabajos en progreso</h1>
+<table border="1" cellpadding="5" cellspacing="0">
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Cantidad</th>
+        <th>Servicio</th>
+        <th>Estado</th>
+        <th>Progreso</th>
+        <th>Observaciones</th>
+        <th style="text-align:center;">Ver observaciones</th>
+    </tr>
+    {% for usuario in usuarios %}
+    <tr>
+        <td>{{ usuario[0] }}</td>
+        <td>{{ usuario[1] }}</td>
+        <td>{{ usuario[2] }}</td>
+        <td>{{ usuario[3] }}</td>
+        <td>{{ usuario[4] }}</td>
+        <td>
+            <a href="{{ url_for('progreso', usuario_id=usuario[0]) }}" style="text-decoration:none;">
+                <div class="progress-bar" style="cursor:pointer;">
+                    <div class="progress-bar-fill" style="width: {{ usuario[5] }}%;">
+                        {{ usuario[5] }}%
+                    </div>
                 </div>
-            </td>
-            <td>{{ usuario[6] }}</td>
-            <!-- Eliminada la celda de Acciones -->
-        </tr>
-        {% endfor %}
-    </table>
-    <br/>
-    <button onclick="window.location.href='/'">Volver al formulario</button>
-    <button onclick="window.location.href='/registros'">Ver trabajos archivados</button>
-    <!-- Eliminado el botón Progreso -->
+            </a>
+        </td>
+        <td>{{ usuario[6] }}</td>
+        <td style="text-align:center;">
+            <button type="button" onclick="mostrarObservacion('{{ usuario[6]|escape }}')">Ver</button>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<br>
+<button onclick="window.location.href='/'">Volver al formulario</button>
+<button onclick="window.location.href='/registros'">Ver trabajos archivados</button>
+
+<!-- Modal para mostrar observaciones -->
+<div id="modalObservacion" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+    <div style="background:white; padding:20px; border-radius:8px; max-width:400px; margin:auto;">
+        <h3>Observaciones</h3>
+        <div id="textoObservacion" style="white-space:pre-wrap;"></div>
+        <br>
+        <button onclick="cerrarModal()">Cerrar</button>
+    </div>
+</div>
+<script>
+function mostrarObservacion(texto) {
+    document.getElementById('textoObservacion').innerText = texto || 'Sin observaciones';
+    document.getElementById('modalObservacion').style.display = 'flex';
+}
+function cerrarModal() {
+    document.getElementById('modalObservacion').style.display = 'none';
+}
+</script>
 </body>
 </html>
