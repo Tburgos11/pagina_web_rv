@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Editar Observaciones</title>
+</head>
+<body>
+    <h1>Editar Observaciones para registro #{{ id }}</h1>
+    <form method="POST">
+        <textarea name="observaciones" rows="5" cols="40">{{ observacion }}</textarea><br><br>
+        <button type="submit">Guardar</button>
+        <button onclick="window.location.href='/registros';return false;">Cancelar</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Trabajos en progreso</title>
+    <style>
+        .progress-bar {
+            background-color: #ddd;
+            border-radius: 5px;
+            width: 100px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .progress-bar-fill {
+            background-color: #4caf50;
+            height: 100%;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <h1>Trabajos en progreso</h1>
+    <table border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Cantidad</th>
+            <th>Servicio</th>
+            <th>Estado</th>
+            <th>Progreso</th>
+            <th>Observaciones</th>
+            <!-- Eliminada la columna Acciones -->
+        </tr>
+        {% for usuario in usuarios %}
+        <tr>
+            <td>{{ usuario[0] }}</td>
+            <td>{{ usuario[1] }}</td>
+            <td>{{ usuario[2] }}</td>
+            <td>{{ usuario[3] }}</td>
+            <td>{{ usuario[4] }}</td>
+            <td>
+                <div class="progress-bar" onclick="window.location.href='/progreso/{{ usuario[0] }}'" style="cursor:pointer;">
+                    <div class="progress-bar-fill" style="width: {{ usuario[5] }}%;"></div>
+                </div>
+            </td>
+            <td>{{ usuario[6] }}</td>
+            <!-- Eliminada la celda de Acciones -->
+        </tr>
+        {% endfor %}
+    </table>
+    <br/>
+    <button onclick="window.location.href='/'">Volver al formulario</button>
+    <button onclick="window.location.href='/registros'">Ver trabajos archivados</button>
+    <!-- Eliminado el botón Progreso -->
+</body>
+</html>

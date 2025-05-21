@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Registrar Trabajo</title>
+</head>
+<body>
+    <h1>Registrar Trabajo</h1>
+    <form method="POST">
+        <label for="nombre">Nombre de cliente:</label><br/>
+        <input type="text" id="nombre" name="nombre" required /><br/><br/>
+
+        <label for="cantidad">Cantidad:</label><br/>
+        <input type="number" id="cantidad" name="cantidad" min="1" required /><br/><br/>
+
+        <label for="servicio">Tipo de servicio:</label><br/>
+        <select id="servicio" name="servicio" required>
+            {% for servicio in servicios %}
+            <option value="{{ servicio }}">{{ servicio }}</option>
+            {% endfor %}
+        </select><br/><br/>
+
+        <button type="submit">Guardar</button>
+    </form>
+    <br/>
+    <button onclick="window.location.href='/usuarios'">Ver trabajos en progreso</button>
+    <button onclick="window.location.href='/registros'">Ver trabajos archivados</button>
+</body>
+</html>

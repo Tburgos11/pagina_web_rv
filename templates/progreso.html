@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Progreso de Tareas</title>
+    <style>
+        .progress-bar {
+            background-color: #ddd;
+            border-radius: 5px;
+            width: 300px;
+            height: 25px;
+            margin-bottom: 20px;
+        }
+        .progress-bar-fill {
+            background-color: #4caf50;
+            height: 100%;
+            border-radius: 5px;
+            width: {{ progreso|default(0) }}%;
+            transition: width 0.5s;
+        }
+        .tarea {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Progreso de Tareas</h1>
+    <div class="progress-bar">
+        <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div id="porcentaje">{{ progreso|default(0) }}% completado</div>
+    <form id="tareasForm" method="POST">
+        {% for tarea in tareas %}
+        <div class="tarea">
+            <input type="checkbox" id="tarea{{ loop.index0 }}" name="tarea" value="{{ tarea }}"
+                {% if tarea in tareas_completadas %}checked{% endif %}>
+            <label for="tarea{{ loop.index0 }}">{{ tarea }}</label>
+        </div>
+        {% endfor %}
+        <button type="submit" name="accion" value="guardar">Guardar cambios</button>
+        <button type="submit" name="accion" value="cancelar" style="background-color: #e74c3c; color: white;">Cancelar</button>
+    </form>
+    <br>
+    <button onclick="window.location.href='/usuarios'">Volver</button>
+    <script>
+        function actualizarProgreso() {
+            const checkboxes = document.querySelectorAll('input[name="tarea"]');
+            const total = checkboxes.length;
+            let completadas = 0;
+            checkboxes.forEach(cb => {
+                if (cb.checked) completadas++;
+            });
+            const porcentaje = total === 0 ? 0 : Math.round((completadas / total) * 100);
+            document.getElementById('progressFill').style.width = porcentaje + '%';
+            document.getElementById('porcentaje').innerText = porcentaje + '% completado';
+        }
+        window.onload = actualizarProgreso;
+        document.querySelectorAll('input[name="tarea"]').forEach(cb => {
+            cb.addEventListener('change', actualizarProgreso);
+        });
+    </script>
+</body>
+</html>

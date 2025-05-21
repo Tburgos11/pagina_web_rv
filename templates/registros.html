@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Trabajos Archivados</title>
+</head>
+<body>
+    <h1>Trabajos Archivados</h1>
+    <table border="1" cellpadding="5" cellspacing="0">
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Cantidad</th>
+            <th>Servicio</th>
+            <th>Estado</th>
+            <th>Observaciones</th>
+            <!-- Eliminada la columna Progreso -->
+        </tr>
+        {% for registro in registros %}
+        <tr>
+            <td>{{ registro[0] }}</td>
+            <td>{{ registro[1] }}</td>
+            <td>{{ registro[2] }}</td>
+            <td>{{ registro[3] }}</td>
+            <td>{{ registro[4] }}</td>
+            <td>{{ registro[6] }}</td>
+            <!-- Eliminada la celda de Progreso -->
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <button onclick="window.location.href='/'">Volver al formulario</button>
+    <button onclick="window.location.href='/usuarios'">Ver trabajos en progreso</button>
+</body>
+</html>
