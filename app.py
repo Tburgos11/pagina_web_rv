@@ -76,21 +76,21 @@ TODAS_LAS_TAREAS = [
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-    if request.method == "POST":
-        nombre = request.form["nombre"]
-        cantidad = request.form["cantidad"]
-        servicio = request.form["servicio"]
-        # Inicialmente estado será 'En Progreso' y progreso 0
-        estado = "En Progreso"
-        progreso = 0
-        observaciones = ""
-        tareas_completadas = json.dumps([])
-        with sqlite3.connect("database.db") as conn:
-            conn.execute("INSERT INTO datos (nombre, cantidad, servicio, estado, progreso, observaciones, tareas_completadas) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                         (nombre, cantidad, servicio, estado, progreso, observaciones, tareas_completadas))
-        return redirect("/")
-    # Aquí deberías cargar los servicios para el select, por ahora lo dejaremos estático
     servicios = ["Servicio A", "Servicio B", "Servicio C"]
+    if request.method == "POST":
+        nombre = request.form.get("nombre")
+        cantidad = request.form.get("cantidad")
+        servicio = request.form.get("servicio")
+        # Guardar en la base de datos
+        with sqlite3.connect("database.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO datos (nombre, cantidad, servicio, progreso, tareas_completadas, observaciones) VALUES (?, ?, ?, ?, ?, ?)",
+                (nombre, cantidad, servicio, 0, "[]", "")
+            )
+            conn.commit()
+        flash("¡Cliente guardado exitosamente!", "success")
+        return redirect(url_for("index"))
     return render_template("index.html", servicios=servicios)
 
 @app.route("/usuarios")
@@ -315,6 +315,20 @@ def logout():
     if request.method == "POST":
         return '', 204
     return redirect(url_for("login"))
+
+@app.route('/nuevo_usuario', methods=['POST'])
+def nuevo_usuario():
+    # Lógica para guardar el usuario
+    # ...
+    flash('¡Usuario guardado exitosamente!', 'success')
+    return redirect(url_for('ruta_donde_redirigir'))
+
+@app.route('/guardar_cliente', methods=['POST'])
+def guardar_cliente():
+    # Lógica para guardar el cliente
+    # ...
+    flash('¡Cliente guardado exitosamente!', 'success')
+    return redirect(url_for('progreso'))
 
 if __name__ == "__main__":
     init_db()
