@@ -104,11 +104,20 @@ def mostrar_usuarios():
         usuarios_normalizados = []
         for usuario in usuarios:
             usuario = list(usuario)
-            try:
-                progreso = int(usuario[5]) if usuario[5] is not None else 0
-            except Exception:
+            estado = usuario[4]
+            # Traduce el estado a porcentaje
+            if estado == "Completado":
+                progreso = 100
+            elif estado == "En Progreso":
+                progreso = 50
+            elif estado == "Pendiente":
                 progreso = 0
-            progreso = max(0, min(progreso, 100))
+            else:
+                # Si tienes un campo progreso numérico, úsalo como respaldo
+                try:
+                    progreso = int(usuario[5]) if usuario[5] is not None else 0
+                except Exception:
+                    progreso = 0
             usuario[5] = progreso
             usuarios_normalizados.append(usuario)
     return render_template("usuarios.html", usuarios=usuarios_normalizados)

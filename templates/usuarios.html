@@ -29,7 +29,6 @@
         <th>Nombre</th>
         <th>Cantidad</th>
         <th>Servicio</th>
-        <th>Estado</th>
         <th>Progreso</th>
         <th>Observaciones</th>
     </tr>
@@ -39,12 +38,11 @@
         <td>{{ usuario[1] }}</td>
         <td>{{ usuario[2] }}</td>
         <td>{{ usuario[3] }}</td>
-        <td>{{ usuario[4] }}</td>
         <td>
-            <a href="{{ url_for('progreso', usuario_id=usuario[0]) }}" style="text-decoration:none;">
+            <a href="{{ url_for('progreso', usuario_id=usuario[0]) }}" style="text-decoration: none;">
                 <div class="progress-bar" style="cursor:pointer;">
-                    <div class="progress-bar-fill" style="width: {{ usuario[5] }}%;">
-                        {{ usuario[5] }}%
+                    <div class="progress-bar-fill" style="width: {{ usuario[4] }}%;">
+                        {{ usuario[4] }}%
                     </div>
                 </div>
             </a>
