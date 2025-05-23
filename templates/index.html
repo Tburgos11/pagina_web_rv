@@ -3,27 +3,23 @@
 <head>
     <meta charset="UTF-8" />
     <title>Registrar Trabajo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     {% with mensajes = get_flashed_messages(with_categories=true) %}
       {% if mensajes %}
         <div>
           {% for categoria, mensaje in mensajes %}
-            <div 
-              style="
-                background: {% if categoria == 'success' %}#d4edda{% else %}#f8d7da{% endif %};
-                color: {% if categoria == 'success' %}#155724{% else %}#721c24{% endif %};
-                border: 1px solid {% if categoria == 'success' %}#c3e6cb{% else %}#f5c6cb{% endif %};
-                padding:10px; margin-bottom:10px; border-radius:5px;">
+            <div class="mensaje-{{ categoria }}">
               {{ mensaje }}
             </div>
           {% endfor %}
         </div>
       {% endif %}
     {% endwith %}
-    <!-- Puedes poner esto justo después de <body> en editar_observaciones.html y otras plantillas -->
-<div style="text-align:right; margin-bottom: 10px;">
-    <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
+<div class="barra-superior">
+    <form action="{{ url_for('logout') }}" method="get">
         <button type="submit">Cerrar sesión</button>
     </form>
 </div>
@@ -35,12 +31,38 @@
         <label for="cantidad">Cantidad:</label><br/>
         <input type="number" id="cantidad" name="cantidad" min="1" required /><br/><br/>
 
-        <label for="servicio">Tipo de servicio:</label><br/>
-        <select id="servicio" name="servicio" required>
-            {% for servicio in servicios %}
-            <option value="{{ servicio }}">{{ servicio }}</option>
-            {% endfor %}
+        <label for="tipo_servicio">Tipo de servicio:</label><br/>
+        <select id="tipo_servicio" name="tipo_servicio" required onchange="mostrarServicios()">
+            <option value="">Seleccione...</option>
+            <option value="digital">Digital</option>
+            <option value="impresion">Impresión</option>
+            <option value="fisico">Físico</option>
         </select><br/><br/>
+
+        <div id="servicio_digital" style="display:none;">
+            <label for="servicio_digital_select">Servicio digital:</label><br/>
+            <select id="servicio_digital_select" name="servicio">
+                <option value="logotipos">Logotipos</option>
+                <option value="logotipos2">Logotipos 2</option>
+                <option value="logotipos3">Logotipos 3</option>
+            </select><br/><br/>
+        </div>
+        <div id="servicio_impresion" style="display:none;">
+            <label for="servicio_impresion_select">Servicio de impresión:</label><br/>
+            <select id="servicio_impresion_select" name="servicio">
+                <option value="gigantografias">Gigantografías</option>
+                <option value="gigantografias2">Gigantografías 2</option>
+                <option value="gigantografias3">Gigantografías 3</option>
+            </select><br/><br/>
+        </div>
+        <div id="servicio_fisico" style="display:none;">
+            <label for="servicio_fisico_select">Servicio físico:</label><br/>
+            <select id="servicio_fisico_select" name="servicio">
+                <option value="flyers">Flyers</option>
+                <option value="flyers2">Flyers 2</option>
+                <option value="flyers3">Flyers 3</option>
+            </select><br/><br/>
+        </div>
 
         <label for="observaciones">Observaciones:</label><br/>
         <textarea id="observaciones" name="observaciones" rows="3" cols="40"></textarea><br/><br/>
@@ -50,5 +72,22 @@
     <br/>
     <button onclick="window.location.href='/usuarios'">Ver trabajos en progreso</button>
     <button onclick="window.location.href='/registros'">Ver trabajos archivados</button>
+
+<script>
+function mostrarServicios() {
+    document.getElementById('servicio_digital').style.display = 'none';
+    document.getElementById('servicio_impresion').style.display = 'none';
+    document.getElementById('servicio_fisico').style.display = 'none';
+
+    var tipo = document.getElementById('tipo_servicio').value;
+    if (tipo === 'digital') {
+        document.getElementById('servicio_digital').style.display = 'block';
+    } else if (tipo === 'impresion') {
+        document.getElementById('servicio_impresion').style.display = 'block';
+    } else if (tipo === 'fisico') {
+        document.getElementById('servicio_fisico').style.display = 'block';
+    }
+}
+</script>
 </body>
 </html>

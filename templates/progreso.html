@@ -2,50 +2,27 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Progreso de Tareas</title>
-    <style>
-        .progress-bar {
-            background-color: #ddd;
-            border-radius: 5px;
-            width: 300px;
-            height: 25px;
-            margin-bottom: 20px;
-        }
-        .progress-bar-fill {
-            background-color: #4caf50;
-            height: 100%;
-            border-radius: 5px;
-            width: {{ progreso|default(0) }}%;
-            transition: width 0.5s;
-        }
-        .tarea {
-            margin-bottom: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     {% with mensajes = get_flashed_messages(with_categories=true) %}
       {% if mensajes %}
         <div>
           {% for categoria, mensaje in mensajes %}
-            <div 
-              style="
-                background: {% if categoria == 'success' %}#d4edda{% else %}#f8d7da{% endif %};
-                color: {% if categoria == 'success' %}#155724{% else %}#721c24{% endif %};
-                border: 1px solid {% if categoria == 'success' %}#c3e6cb{% else %}#f5c6cb{% endif %};
-                padding:10px; margin-bottom:10px; border-radius:5px;">
+            <div class="mensaje-{{ categoria }}">
               {{ mensaje }}
             </div>
           {% endfor %}
         </div>
       {% endif %}
     {% endwith %}
-    <!-- Puedes poner esto justo después de <body> en editar_observaciones.html y otras plantillas -->
-<div style="text-align:right; margin-bottom: 10px;">
-    <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
-        <button type="submit">Cerrar sesión</button>
-    </form>
-</div>
+    <div class="barra-superior">
+        <form action="{{ url_for('logout') }}" method="get">
+            <button type="submit">Cerrar sesión</button>
+        </form>
+    </div>
     <h1>Progreso de Tareas</h1>
     <div class="progress-bar">
         <div class="progress-bar-fill" id="progressFill"></div>
@@ -60,7 +37,7 @@
         </div>
         {% endfor %}
         <button type="submit" name="accion" value="guardar">Guardar cambios</button>
-        <button type="submit" name="accion" value="cancelar" style="background-color: #e74c3c; color: white;">Cancelar</button>
+        <button type="submit" name="accion" value="cancelar" class="btn-cancelar">Cancelar</button>
     </form>
     <br>
     <button onclick="window.location.href='/usuarios'">Volver</button>

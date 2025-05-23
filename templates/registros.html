@@ -3,44 +3,43 @@
 <head>
     <meta charset="UTF-8" />
     <title>Trabajos Archivados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <!-- Puedes poner esto justo después de <body> en editar_observaciones.html y otras plantillas -->
 <div style="text-align:right; margin-bottom: 10px;">
     <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
         <button type="submit">Cerrar sesión</button>
     </form>
 </div>
-    <h1>Trabajos Archivados</h1>
-    <form method="get">
-        <input type="text" name="buscar" placeholder="Buscar por nombre" value="{{ buscar_actual }}">
-        <select name="estado">
-            <option value="">Todos los estados</option>
-            {% for est in estados %}
-                <option value="{{ est }}" {% if est == estado_actual %}selected{% endif %}>{{ est }}</option>
-            {% endfor %}
-        </select>
-        <select name="servicio">
-            <option value="">Todos los servicios</option>
-            {% for serv in servicios %}
-                <option value="{{ serv }}" {% if serv == servicio_actual %}selected{% endif %}>{{ serv }}</option>
-            {% endfor %}
-        </select>
-        <label>Desde:</label>
-        <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
-        <label>Hasta:</label>
-        <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
-        <button type="submit">Filtrar</button>
-    </form>
+<h1>Trabajos Archivados</h1>
+<form method="get">
+    <input type="text" name="buscar" placeholder="Buscar por nombre" value="{{ buscar_actual }}">
+    <select name="estado">
+        <option value="">Todos los estados</option>
+        {% for est in estados %}
+            <option value="{{ est }}" {% if est == estado_actual %}selected{% endif %}>{{ est }}</option>
+        {% endfor %}
+    </select>
+    <select name="servicio">
+        <option value="">Todos los servicios</option>
+        {% for serv in servicios %}
+            <option value="{{ serv }}" {% if serv == servicio_actual %}selected{% endif %}>{{ serv }}</option>
+        {% endfor %}
+    </select>
+    <label>Desde:</label>
+    <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
+    <label>Hasta:</label>
+    <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
+    <button type="submit">Filtrar</button>
+</form>
 
-    <table border="1" cellpadding="5" cellspacing="0">
+<table border="1" cellpadding="5" cellspacing="0">
     <tr>
         <th>ID</th>
         <th>Nombre</th>
         <th>Cantidad</th>
         <th>Servicio</th>
         <th>Estado</th>
-        <th>Observaciones</th>
         <th>Fecha de entrega</th>
         <th>Ver observaciones</th>
     </tr>
@@ -51,7 +50,6 @@
         <td>{{ registro[2] }}</td>
         <td>{{ registro[3] }}</td>
         <td>{{ registro[4] }}</td>
-        <td>{{ registro[6] }}</td>
         <td>{{ registro[7] or '' }}</td>
         <td style="text-align:center;">
             <button type="button" onclick="mostrarObservacion('{{ registro[6]|escape }}')">Ver</button>
