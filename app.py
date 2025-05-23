@@ -2,8 +2,9 @@ import os
 import sqlite3
 import json
 import datetime
+import csv
 
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, Response
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
 
@@ -343,6 +344,23 @@ def guardar_cliente():
 @login_required
 def descargar_db():
     return send_file('database.db', as_attachment=True)
+
+@app.route('/descargar_registros_csv')
+@login_required
+def descargar_registros_csv():
+    with get_conn() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM registros")
+        rows = cursor.fetchall()
+        headers = [description[0] for description in cursor.description]
+
+    def generate():
+        data = [headers] + list(rows)
+        for row in data:
+            yield ','.join(map(str, row)) + '\n'
+
+    return Response(generate(), mimetype='text/csv',
+                    headers={"Content-Disposition": "attachment;filename=registros.csv"})
 
 
 if __name__ == "__main__":

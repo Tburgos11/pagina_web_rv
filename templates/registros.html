@@ -61,6 +61,7 @@
 <button onclick="window.location.href='/'">Volver al formulario</button>
 <button onclick="window.location.href='/usuarios'">Ver trabajos en progreso</button>
 <a href="{{ url_for('descargar_db') }}" class="btn-descargar-db">Descargar base de datos</a>
+<a href="{{ url_for('descargar_registros_csv') }}">Descargar registros en CSV</a>
 
 <!-- Modal para mostrar observaciones -->
 <div id="modalObservacion" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
