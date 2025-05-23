@@ -5,6 +5,13 @@
     <title>Registrar Trabajo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .select-scroll {
+            width: 250px;         /* Ajusta el ancho según tu preferencia */
+            max-height: 120px;    /* Altura máxima visible */
+            overflow-y: auto;     /* Scroll vertical si hay muchas opciones */
+        }
+    </style>
 </head>
 <body>
     {% with mensajes = get_flashed_messages(with_categories=true) %}
@@ -35,32 +42,23 @@
         <select id="tipo_servicio" name="tipo_servicio" required onchange="mostrarServicios()">
             <option value="">Seleccione...</option>
             <option value="digital">Digital</option>
-            <option value="impresion">Impresión</option>
             <option value="fisico">Físico</option>
         </select><br/><br/>
 
         <div id="servicio_digital" style="display:none;">
             <label for="servicio_digital_select">Servicio digital:</label><br/>
-            <select id="servicio_digital_select" name="servicio">
-                <option value="logotipos">Logotipos</option>
-                <option value="logotipos2">Logotipos 2</option>
-                <option value="logotipos3">Logotipos 3</option>
-            </select><br/><br/>
-        </div>
-        <div id="servicio_impresion" style="display:none;">
-            <label for="servicio_impresion_select">Servicio de impresión:</label><br/>
-            <select id="servicio_impresion_select" name="servicio">
-                <option value="gigantografias">Gigantografías</option>
-                <option value="gigantografias2">Gigantografías 2</option>
-                <option value="gigantografias3">Gigantografías 3</option>
+            <select id="servicio_digital_select" name="servicio" class="select-scroll">
+                {% for servicio in servicios_digitales %}
+                    <option value="{{ servicio }}">{{ servicio }}</option>
+                {% endfor %}
             </select><br/><br/>
         </div>
         <div id="servicio_fisico" style="display:none;">
             <label for="servicio_fisico_select">Servicio físico:</label><br/>
-            <select id="servicio_fisico_select" name="servicio">
-                <option value="flyers">Flyers</option>
-                <option value="flyers2">Flyers 2</option>
-                <option value="flyers3">Flyers 3</option>
+            <select id="servicio_fisico_select" name="servicio" class="select-scroll">
+                {% for servicio in servicios_fisicos %}
+                    <option value="{{ servicio }}">{{ servicio }}</option>
+                {% endfor %}
             </select><br/><br/>
         </div>
 
@@ -75,18 +73,9 @@
 
 <script>
 function mostrarServicios() {
-    document.getElementById('servicio_digital').style.display = 'none';
-    document.getElementById('servicio_impresion').style.display = 'none';
-    document.getElementById('servicio_fisico').style.display = 'none';
-
     var tipo = document.getElementById('tipo_servicio').value;
-    if (tipo === 'digital') {
-        document.getElementById('servicio_digital').style.display = 'block';
-    } else if (tipo === 'impresion') {
-        document.getElementById('servicio_impresion').style.display = 'block';
-    } else if (tipo === 'fisico') {
-        document.getElementById('servicio_fisico').style.display = 'block';
-    }
+    document.getElementById('servicio_digital').style.display = (tipo === 'digital') ? 'block' : 'none';
+    document.getElementById('servicio_fisico').style.display = (tipo === 'fisico') ? 'block' : 'none';
 }
 </script>
 </body>

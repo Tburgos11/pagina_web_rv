@@ -62,13 +62,21 @@ TODAS_LAS_TAREAS = [
     "Seguimiento post-venta"
 ]
 
+def leer_servicios(nombre_archivo):
+    ruta = os.path.join(os.path.dirname(__file__), nombre_archivo)
+    with open(ruta, encoding="utf-8") as f:
+        servicios = [line.strip() for line in f if line.strip()]
+    return sorted(servicios, key=lambda s: s.lower())
+
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-    servicios = ["Servicio A", "Servicio B", "Servicio C"]
+    servicios_digitales = leer_servicios("digital.txt")
+    servicios_fisicos = leer_servicios("fisico.txt")
     if request.method == "POST":
         nombre = request.form.get("nombre")
         cantidad = request.form.get("cantidad")
+        tipo_servicio = request.form.get("tipo_servicio")
         servicio = request.form.get("servicio")
         observaciones = request.form.get("observaciones", "")
         with get_conn() as conn:
@@ -80,7 +88,11 @@ def index():
             conn.commit()
         flash("¡Cliente guardado exitosamente!", "success")
         return redirect(url_for("index"))
-    return render_template("index.html", servicios=servicios)
+    return render_template(
+        "index.html",
+        servicios_digitales=servicios_digitales,
+        servicios_fisicos=servicios_fisicos
+    )
 
 @app.route("/usuarios")
 @login_required
@@ -317,6 +329,7 @@ def guardar_cliente():
     # ...
     flash('¡Cliente guardado exitosamente!', 'success')
     return redirect(url_for('progreso'))
+
 
 if __name__ == "__main__":
     init_db()  # Asegura que las tablas existen antes de correr la app
