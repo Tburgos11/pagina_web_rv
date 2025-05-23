@@ -1,70 +1,23 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-import sqlite3
+import os
+import psycopg2
 import json
 import datetime
 
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
-app.secret_key = "clave_secreta"  # Necesario para sesiones
+app.secret_key = "clave_secreta"
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-# Inicializar bases de datos y tablas
-def init_db():
-    with sqlite3.connect("database.db") as conn:
-        # Tabla principal con datos activos
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS datos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT,
-                cantidad INTEGER,
-                servicio TEXT,
-                estado TEXT,
-                progreso INTEGER,
-                observaciones TEXT,
-                tareas_completadas TEXT
-            );
-        """)
-        # Tabla para registros archivados (finalizados o cancelados)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS registros (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT,
-                cantidad INTEGER,
-                servicio TEXT,
-                estado TEXT,
-                progreso INTEGER,
-                observaciones TEXT
-            );
-        """)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-def init_registros_db():
-    with sqlite3.connect("registros.db") as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS registros (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre TEXT,
-                cantidad INTEGER,
-                servicio TEXT,
-                estado TEXT,
-                progreso INTEGER,
-                observaciones TEXT
-            );
-        """)
-
-def init_trabajadores_db():
-    with sqlite3.connect("trabajadores.db") as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS trabajadores (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE,
-                password TEXT
-            );
-        """)
+def get_conn():
+    return psycopg2.connect(DATABASE_URL)
 
 TODAS_LAS_TAREAS = [
     "Revisión de documentos",
@@ -82,11 +35,10 @@ def index():
         cantidad = request.form.get("cantidad")
         servicio = request.form.get("servicio")
         observaciones = request.form.get("observaciones", "")
-        # Guardar en la base de datos
-        with sqlite3.connect("database.db") as conn:
+        with get_conn() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO datos (nombre, cantidad, servicio, progreso, tareas_completadas, observaciones) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO datos (nombre, cantidad, servicio, progreso, tareas_completadas, observaciones) VALUES (%s, %s, %s, %s, %s, %s)",
                 (nombre, cantidad, servicio, 0, "[]", observaciones)
             )
             conn.commit()
@@ -97,7 +49,7 @@ def index():
 @app.route("/usuarios")
 @login_required
 def mostrar_usuarios():
-    with sqlite3.connect("database.db") as conn:
+    with get_conn() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM datos")
         usuarios = cursor.fetchall()
@@ -129,19 +81,19 @@ def mostrar_registros():
     params = []
 
     if estado:
-        query += " AND estado = ?"
+        query += " AND estado = %s"
         params.append(estado)
     if servicio:
-        query += " AND servicio = ?"
+        query += " AND servicio = %s"
         params.append(servicio)
     if buscar:
-        query += " AND nombre LIKE ?"
+        query += " AND nombre LIKE %s"
         params.append(f"%{buscar}%")
     if fecha_inicio:
-        query += " AND fecha_entrega >= ?"
+        query += " AND fecha_entrega >= %s"
         params.append(fecha_inicio)
     if fecha_fin:
-        query += " AND fecha_entrega <= ?"
+        query += " AND fecha_entrega <= %s"
         params.append(fecha_fin)
 
     columnas_validas = ["id", "nombre", "cantidad", "servicio", "estado", "progreso", "fecha_entrega"]
@@ -152,7 +104,7 @@ def mostrar_registros():
 
     query += f" ORDER BY {ordenar} {direccion}"
 
-    with sqlite3.connect("registros.db") as conn:
+    with get_conn() as conn:
         cursor = conn.cursor()
         cursor.execute(query, params)
         registros = cursor.fetchall()
@@ -179,13 +131,13 @@ def mostrar_registros():
 def editar_observaciones(id):
     if request.method == 'POST':
         nuevas_observaciones = request.form['observaciones']
-        with sqlite3.connect("database.db") as conn:
-            conn.execute("UPDATE registros SET observaciones = ? WHERE id = ?", (nuevas_observaciones, id))
+        with get_conn() as conn:
+            conn.execute("UPDATE registros SET observaciones = %s WHERE id = %s", (nuevas_observaciones, id))
         return redirect(url_for('mostrar_registros'))
 
-    with sqlite3.connect("database.db") as conn:
+    with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT observaciones FROM registros WHERE id = ?", (id,))
+        cursor.execute("SELECT observaciones FROM registros WHERE id = %s", (id,))
         observacion = cursor.fetchone()
         observacion = observacion[0] if observacion else ''
     return render_template('editar_observaciones.html', id=id, observacion=observacion)
@@ -194,26 +146,26 @@ def editar_observaciones(id):
 @login_required
 def editar_observaciones_usuario(id):
     nuevas_observaciones = request.form['observaciones']
-    with sqlite3.connect("database.db") as conn:
-        conn.execute("UPDATE datos SET observaciones = ? WHERE id = ?", (nuevas_observaciones, id))
+    with get_conn() as conn:
+        conn.execute("UPDATE datos SET observaciones = %s WHERE id = %s", (nuevas_observaciones, id))
     flash("Observaciones actualizadas correctamente.", "success")
     return redirect(url_for('mostrar_usuarios'))
 
 # Ruta para mover proyectos finalizados o cancelados a registros
 @app.route('/mover_a_registros/<int:id>')
 def mover_a_registros(id):
-    with sqlite3.connect("database.db") as conn:
+    with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM datos WHERE id = ?", (id,))
+        cursor.execute("SELECT * FROM datos WHERE id = %s", (id,))
         proyecto = cursor.fetchone()
         if proyecto:
             # Insertar en registros
             conn.execute("""
                 INSERT INTO registros (nombre, cantidad, servicio, estado, progreso, observaciones)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """, proyecto[1:])  # saltamos el id (proyecto[0])
             # Borrar de datos
-            conn.execute("DELETE FROM datos WHERE id = ?", (id,))
+            conn.execute("DELETE FROM datos WHERE id = %s", (id,))
     return redirect(url_for('mostrar_usuarios'))
 
 @app.route('/progreso/<int:usuario_id>', methods=['GET', 'POST'])
@@ -230,17 +182,17 @@ def progreso(usuario_id):
         accion = request.form.get('accion')
         if accion == 'cancelar':
             # Mover a registros.db con estado "Cancelado"
-            with sqlite3.connect("database.db") as conn:
+            with get_conn() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = ?", (usuario_id,))
+                cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = %s", (usuario_id,))
                 usuario = cursor.fetchone()
                 if usuario:
                     with sqlite3.connect("registros.db") as conn_reg:
                         conn_reg.execute("""
                             INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones)
-                            VALUES (?, ?, ?, ?, ?)
+                            VALUES (%s, %s, %s, %s, %s)
                         """, (usuario[0], usuario[1], usuario[2], "Cancelado", usuario[3]))
-                    cursor.execute("DELETE FROM datos WHERE id = ?", (usuario_id,))
+                    cursor.execute("DELETE FROM datos WHERE id = %s", (usuario_id,))
                 conn.commit()
             return redirect(url_for('mostrar_registros'))
 
@@ -248,32 +200,32 @@ def progreso(usuario_id):
         tareas_completadas = request.form.getlist('tarea')
         progreso = int((len(tareas_completadas) / len(TODAS_LAS_TAREAS)) * 100) if TODAS_LAS_TAREAS else 0
 
-        with sqlite3.connect("database.db") as conn:
+        with get_conn() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE datos SET progreso = ?, tareas_completadas = ? WHERE id = ?",
+                "UPDATE datos SET progreso = %s, tareas_completadas = %s WHERE id = %s",
                 (progreso, json.dumps(tareas_completadas), usuario_id)
             )
             if progreso == 100:
-                cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = ?", (usuario_id,))
+                cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = %s", (usuario_id,))
                 usuario = cursor.fetchone()
                 if usuario:
                     fecha_entrega = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     with sqlite3.connect("registros.db") as conn_reg:
                         conn_reg.execute("""
                             INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones, fecha_entrega)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            VALUES (%s, %s, %s, %s, %s, %s)
                         """, (usuario[0], usuario[1], usuario[2], "Completado", usuario[3], fecha_entrega))
-                    cursor.execute("DELETE FROM datos WHERE id = ?", (usuario_id,))
+                    cursor.execute("DELETE FROM datos WHERE id = %s", (usuario_id,))
                 conn.commit()
                 return redirect(url_for('mostrar_registros'))
             else:
                 conn.commit()
                 return redirect(url_for('mostrar_usuarios'))
 
-    with sqlite3.connect("database.db") as conn:
+    with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT progreso, tareas_completadas FROM datos WHERE id = ?", (usuario_id,))
+        cursor.execute("SELECT progreso, tareas_completadas FROM datos WHERE id = %s", (usuario_id,))
         row = cursor.fetchone()
         progreso_actual = row[0] if row else 0
         tareas_completadas = json.loads(row[1]) if row and row[1] else []
@@ -294,9 +246,9 @@ class Trabajador(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    with sqlite3.connect("trabajadores.db") as conn:
+    with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, username, password FROM trabajadores WHERE id = ?", (user_id,))
+        cursor.execute("SELECT id, username, password FROM trabajadores WHERE id = %s", (user_id,))
         user = cursor.fetchone()
         if user:
             return Trabajador(*user)
@@ -307,9 +259,9 @@ def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        with sqlite3.connect("trabajadores.db") as conn:
+        with get_conn() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, username, password FROM trabajadores WHERE username = ?", (username,))
+            cursor.execute("SELECT id, username, password FROM trabajadores WHERE username = %s", (username,))
             user = cursor.fetchone()
             if user and check_password_hash(user[2], password):
                 login_user(Trabajador(*user))
@@ -341,7 +293,5 @@ def guardar_cliente():
     return redirect(url_for('progreso'))
 
 if __name__ == "__main__":
-    init_db()
-    init_registros_db()
-    init_trabajadores_db()  
+    # NO LLAMES a init_db ni a ninguna función que cree/borré tablas aquí
     app.run(host="0.0.0.0", port=5000, debug=True)

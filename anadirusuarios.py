@@ -1,22 +1,22 @@
-import sqlite3
 import os
+import psycopg2
 from werkzeug.security import generate_password_hash
 
-# Eliminar las bases de datos si existen
-if os.path.exists("trabajadores.db"):
-    os.remove("trabajadores.db")
-if os.path.exists("registros.db"):
-    os.remove("registros.db")
+# Usar DATABASE_URL de las variables de entorno (ideal para Render y producción)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Crear nueva base de datos de trabajadores y tabla
-conn = sqlite3.connect("trabajadores.db")
-conn.execute("""
-    CREATE TABLE trabajadores (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+conn = psycopg2.connect(DATABASE_URL)
+cur = conn.cursor()
+
+# Solo crear la tabla si no existe (NO la borres)
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS trabajadores (
+        id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL
     );
 """)
+
 usuarios = [
     ("Thomas", generate_password_hash("1109")),
     ("Ricardo", generate_password_hash("1234")),
@@ -24,22 +24,11 @@ usuarios = [
     ("TestUser", generate_password_hash("testpass"))
 ]
 for username, password in usuarios:
-    conn.execute("INSERT INTO trabajadores (username, password) VALUES (?, ?)", (username, password))
-conn.commit()
-conn.close()
+    cur.execute(
+        "INSERT INTO trabajadores (username, password) VALUES (%s, %s) ON CONFLICT (username) DO NOTHING",
+        (username, password)
+    )
 
-# Crear nueva base de datos de registros y tabla
-conn = sqlite3.connect("registros.db")
-conn.execute("""
-    CREATE TABLE registros (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        cantidad INTEGER,
-        servicio TEXT,
-        estado TEXT,
-        observaciones TEXT,
-        fecha_entrega TEXT
-    );
-""")
 conn.commit()
+cur.close()
 conn.close()
