@@ -1,2 +1,4 @@
 Flask
-flask_login
+flask-login
+werkzeug
+psycopg2-binary
