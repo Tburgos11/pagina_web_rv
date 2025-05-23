@@ -53,7 +53,6 @@ def mostrar_usuarios():
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM datos")
         usuarios = cursor.fetchall()
-        # Normalizar el campo progreso para cada usuario
         usuarios_normalizados = []
         for usuario in usuarios:
             usuario = list(usuario)
@@ -132,7 +131,9 @@ def editar_observaciones(id):
     if request.method == 'POST':
         nuevas_observaciones = request.form['observaciones']
         with get_conn() as conn:
-            conn.execute("UPDATE registros SET observaciones = %s WHERE id = %s", (nuevas_observaciones, id))
+            cursor = conn.cursor()
+            cursor.execute("UPDATE registros SET observaciones = %s WHERE id = %s", (nuevas_observaciones, id))
+            conn.commit()
         return redirect(url_for('mostrar_registros'))
 
     with get_conn() as conn:
@@ -147,11 +148,12 @@ def editar_observaciones(id):
 def editar_observaciones_usuario(id):
     nuevas_observaciones = request.form['observaciones']
     with get_conn() as conn:
-        conn.execute("UPDATE datos SET observaciones = %s WHERE id = %s", (nuevas_observaciones, id))
+        cursor = conn.cursor()
+        cursor.execute("UPDATE datos SET observaciones = %s WHERE id = %s", (nuevas_observaciones, id))
+        conn.commit()
     flash("Observaciones actualizadas correctamente.", "success")
     return redirect(url_for('mostrar_usuarios'))
 
-# Ruta para mover proyectos finalizados o cancelados a registros
 @app.route('/mover_a_registros/<int:id>')
 def mover_a_registros(id):
     with get_conn() as conn:
@@ -159,44 +161,33 @@ def mover_a_registros(id):
         cursor.execute("SELECT * FROM datos WHERE id = %s", (id,))
         proyecto = cursor.fetchone()
         if proyecto:
-            # Insertar en registros
-            conn.execute("""
+            cursor.execute("""
                 INSERT INTO registros (nombre, cantidad, servicio, estado, progreso, observaciones)
                 VALUES (%s, %s, %s, %s, %s, %s)
-            """, proyecto[1:])  # saltamos el id (proyecto[0])
-            # Borrar de datos
-            conn.execute("DELETE FROM datos WHERE id = %s", (id,))
+            """, proyecto[1:7])  # saltamos el id (proyecto[0])
+            cursor.execute("DELETE FROM datos WHERE id = %s", (id,))
+            conn.commit()
     return redirect(url_for('mostrar_usuarios'))
 
 @app.route('/progreso/<int:usuario_id>', methods=['GET', 'POST'])
 @login_required
 def progreso(usuario_id):
-    TODAS_LAS_TAREAS = [
-        "Revisión de documentos",
-        "Llamada al cliente",
-        "Entrega de producto",
-        "Seguimiento post-venta"
-    ]
-
     if request.method == 'POST':
         accion = request.form.get('accion')
         if accion == 'cancelar':
-            # Mover a registros.db con estado "Cancelado"
             with get_conn() as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = %s", (usuario_id,))
                 usuario = cursor.fetchone()
                 if usuario:
-                    with sqlite3.connect("registros.db") as conn_reg:
-                        conn_reg.execute("""
-                            INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones)
-                            VALUES (%s, %s, %s, %s, %s)
-                        """, (usuario[0], usuario[1], usuario[2], "Cancelado", usuario[3]))
+                    cursor.execute("""
+                        INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (usuario[0], usuario[1], usuario[2], "Cancelado", usuario[3]))
                     cursor.execute("DELETE FROM datos WHERE id = %s", (usuario_id,))
-                conn.commit()
+                    conn.commit()
             return redirect(url_for('mostrar_registros'))
 
-        # Acción normal de guardar progreso
         tareas_completadas = request.form.getlist('tarea')
         progreso = int((len(tareas_completadas) / len(TODAS_LAS_TAREAS)) * 100) if TODAS_LAS_TAREAS else 0
 
@@ -211,11 +202,10 @@ def progreso(usuario_id):
                 usuario = cursor.fetchone()
                 if usuario:
                     fecha_entrega = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    with sqlite3.connect("registros.db") as conn_reg:
-                        conn_reg.execute("""
-                            INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones, fecha_entrega)
-                            VALUES (%s, %s, %s, %s, %s, %s)
-                        """, (usuario[0], usuario[1], usuario[2], "Completado", usuario[3], fecha_entrega))
+                    cursor.execute("""
+                        INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones, fecha_entrega)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (usuario[0], usuario[1], usuario[2], "Completado", usuario[3], fecha_entrega))
                     cursor.execute("DELETE FROM datos WHERE id = %s", (usuario_id,))
                 conn.commit()
                 return redirect(url_for('mostrar_registros'))
@@ -293,5 +283,4 @@ def guardar_cliente():
     return redirect(url_for('progreso'))
 
 if __name__ == "__main__":
-    # NO LLAMES a init_db ni a ninguna función que cree/borré tablas aquí
     app.run(host="0.0.0.0", port=5000, debug=True)
