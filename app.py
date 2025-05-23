@@ -3,7 +3,7 @@ import sqlite3
 import json
 import datetime
 
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
 
@@ -338,6 +338,11 @@ def guardar_cliente():
     # ...
     flash('¡Cliente guardado exitosamente!', 'success')
     return redirect(url_for('progreso'))
+
+@app.route('/descargar_db')
+@login_required
+def descargar_db():
+    return send_file('database.db', as_attachment=True)
 
 
 if __name__ == "__main__":
