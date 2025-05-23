@@ -1,5 +1,5 @@
 import os
-import psycopg2
+import sqlite3
 import json
 import datetime
 
@@ -14,10 +14,46 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_PATH = "trabajadores.db"
 
 def get_conn():
-    return psycopg2.connect(DATABASE_URL)
+    return sqlite3.connect(DATABASE_PATH)
+
+# --- INICIALIZACIÓN DE TABLAS SI NO EXISTEN ---
+def init_db():
+    with get_conn() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS datos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT,
+                cantidad INTEGER,
+                servicio TEXT,
+                progreso INTEGER,
+                tareas_completadas TEXT,
+                observaciones TEXT
+            );
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS registros (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT,
+                cantidad INTEGER,
+                servicio TEXT,
+                estado TEXT,
+                progreso INTEGER,
+                observaciones TEXT,
+                fecha_entrega TEXT
+            );
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS trabajadores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            );
+        """)
+        conn.commit()
 
 TODAS_LAS_TAREAS = [
     "Revisión de documentos",
@@ -38,7 +74,7 @@ def index():
         with get_conn() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO datos (nombre, cantidad, servicio, progreso, tareas_completadas, observaciones) VALUES (%s, %s, %s, %s, %s, %s)",
+                "INSERT INTO datos (nombre, cantidad, servicio, progreso, tareas_completadas, observaciones) VALUES (?, ?, ?, ?, ?, ?)",
                 (nombre, cantidad, servicio, 0, "[]", observaciones)
             )
             conn.commit()
@@ -80,19 +116,19 @@ def mostrar_registros():
     params = []
 
     if estado:
-        query += " AND estado = %s"
+        query += " AND estado = ?"
         params.append(estado)
     if servicio:
-        query += " AND servicio = %s"
+        query += " AND servicio = ?"
         params.append(servicio)
     if buscar:
-        query += " AND nombre LIKE %s"
+        query += " AND nombre LIKE ?"
         params.append(f"%{buscar}%")
     if fecha_inicio:
-        query += " AND fecha_entrega >= %s"
+        query += " AND fecha_entrega >= ?"
         params.append(fecha_inicio)
     if fecha_fin:
-        query += " AND fecha_entrega <= %s"
+        query += " AND fecha_entrega <= ?"
         params.append(fecha_fin)
 
     columnas_validas = ["id", "nombre", "cantidad", "servicio", "estado", "progreso", "fecha_entrega"]
@@ -132,13 +168,13 @@ def editar_observaciones(id):
         nuevas_observaciones = request.form['observaciones']
         with get_conn() as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE registros SET observaciones = %s WHERE id = %s", (nuevas_observaciones, id))
+            cursor.execute("UPDATE registros SET observaciones = ? WHERE id = ?", (nuevas_observaciones, id))
             conn.commit()
         return redirect(url_for('mostrar_registros'))
 
     with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT observaciones FROM registros WHERE id = %s", (id,))
+        cursor.execute("SELECT observaciones FROM registros WHERE id = ?", (id,))
         observacion = cursor.fetchone()
         observacion = observacion[0] if observacion else ''
     return render_template('editar_observaciones.html', id=id, observacion=observacion)
@@ -149,7 +185,7 @@ def editar_observaciones_usuario(id):
     nuevas_observaciones = request.form['observaciones']
     with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("UPDATE datos SET observaciones = %s WHERE id = %s", (nuevas_observaciones, id))
+        cursor.execute("UPDATE datos SET observaciones = ? WHERE id = ?", (nuevas_observaciones, id))
         conn.commit()
     flash("Observaciones actualizadas correctamente.", "success")
     return redirect(url_for('mostrar_usuarios'))
@@ -158,14 +194,14 @@ def editar_observaciones_usuario(id):
 def mover_a_registros(id):
     with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM datos WHERE id = %s", (id,))
+        cursor.execute("SELECT * FROM datos WHERE id = ?", (id,))
         proyecto = cursor.fetchone()
         if proyecto:
             cursor.execute("""
                 INSERT INTO registros (nombre, cantidad, servicio, estado, progreso, observaciones)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, proyecto[1:7])  # saltamos el id (proyecto[0])
-            cursor.execute("DELETE FROM datos WHERE id = %s", (id,))
+            cursor.execute("DELETE FROM datos WHERE id = ?", (id,))
             conn.commit()
     return redirect(url_for('mostrar_usuarios'))
 
@@ -177,14 +213,14 @@ def progreso(usuario_id):
         if accion == 'cancelar':
             with get_conn() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = %s", (usuario_id,))
+                cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = ?", (usuario_id,))
                 usuario = cursor.fetchone()
                 if usuario:
                     cursor.execute("""
                         INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones)
-                        VALUES (%s, %s, %s, %s, %s)
+                        VALUES (?, ?, ?, ?, ?)
                     """, (usuario[0], usuario[1], usuario[2], "Cancelado", usuario[3]))
-                    cursor.execute("DELETE FROM datos WHERE id = %s", (usuario_id,))
+                    cursor.execute("DELETE FROM datos WHERE id = ?", (usuario_id,))
                     conn.commit()
             return redirect(url_for('mostrar_registros'))
 
@@ -194,19 +230,19 @@ def progreso(usuario_id):
         with get_conn() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE datos SET progreso = %s, tareas_completadas = %s WHERE id = %s",
+                "UPDATE datos SET progreso = ?, tareas_completadas = ? WHERE id = ?",
                 (progreso, json.dumps(tareas_completadas), usuario_id)
             )
             if progreso == 100:
-                cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = %s", (usuario_id,))
+                cursor.execute("SELECT nombre, cantidad, servicio, observaciones FROM datos WHERE id = ?", (usuario_id,))
                 usuario = cursor.fetchone()
                 if usuario:
                     fecha_entrega = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     cursor.execute("""
                         INSERT INTO registros (nombre, cantidad, servicio, estado, observaciones, fecha_entrega)
-                        VALUES (%s, %s, %s, %s, %s, %s)
+                        VALUES (?, ?, ?, ?, ?, ?)
                     """, (usuario[0], usuario[1], usuario[2], "Completado", usuario[3], fecha_entrega))
-                    cursor.execute("DELETE FROM datos WHERE id = %s", (usuario_id,))
+                    cursor.execute("DELETE FROM datos WHERE id = ?", (usuario_id,))
                 conn.commit()
                 return redirect(url_for('mostrar_registros'))
             else:
@@ -215,7 +251,7 @@ def progreso(usuario_id):
 
     with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT progreso, tareas_completadas FROM datos WHERE id = %s", (usuario_id,))
+        cursor.execute("SELECT progreso, tareas_completadas FROM datos WHERE id = ?", (usuario_id,))
         row = cursor.fetchone()
         progreso_actual = row[0] if row else 0
         tareas_completadas = json.loads(row[1]) if row and row[1] else []
@@ -238,7 +274,7 @@ class Trabajador(UserMixin):
 def load_user(user_id):
     with get_conn() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, username, password FROM trabajadores WHERE id = %s", (user_id,))
+        cursor.execute("SELECT id, username, password FROM trabajadores WHERE id = ?", (user_id,))
         user = cursor.fetchone()
         if user:
             return Trabajador(*user)
@@ -251,7 +287,7 @@ def login():
         password = request.form["password"]
         with get_conn() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, username, password FROM trabajadores WHERE username = %s", (username,))
+            cursor.execute("SELECT id, username, password FROM trabajadores WHERE username = ?", (username,))
             user = cursor.fetchone()
             if user and check_password_hash(user[2], password):
                 login_user(Trabajador(*user))
@@ -283,4 +319,5 @@ def guardar_cliente():
     return redirect(url_for('progreso'))
 
 if __name__ == "__main__":
+    init_db()  # Asegura que las tablas existen antes de correr la app
     app.run(host="0.0.0.0", port=5000, debug=True)
