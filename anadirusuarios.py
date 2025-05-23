@@ -3,7 +3,8 @@ from werkzeug.security import generate_password_hash
 
 usuarios = [
     ("Thomas", generate_password_hash("1109")),
-    ("Ricardo", generate_password_hash("1234"))
+    ("Ricardo", generate_password_hash("1234")),
+    ("Prueba", generate_password_hash("prueba123"))  # Usuario de prueba añadido
 ]
 
 conn = sqlite3.connect("trabajadores.db")
@@ -14,7 +15,7 @@ for username, password in usuarios:
         print(f"El usuario {username} ya existe.")
 conn.commit()
 conn.close()
-import sqlite3
+
 conn = sqlite3.connect("registros.db")
 conn.execute("ALTER TABLE registros ADD COLUMN fecha_entrega TEXT")
 conn.commit()
