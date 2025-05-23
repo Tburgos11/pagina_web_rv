@@ -81,12 +81,13 @@ def index():
         nombre = request.form.get("nombre")
         cantidad = request.form.get("cantidad")
         servicio = request.form.get("servicio")
+        observaciones = request.form.get("observaciones", "")
         # Guardar en la base de datos
         with sqlite3.connect("database.db") as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO datos (nombre, cantidad, servicio, progreso, tareas_completadas, observaciones) VALUES (?, ?, ?, ?, ?, ?)",
-                (nombre, cantidad, servicio, 0, "[]", "")
+                (nombre, cantidad, servicio, 0, "[]", observaciones)
             )
             conn.commit()
         flash("¡Cliente guardado exitosamente!", "success")
@@ -188,6 +189,15 @@ def editar_observaciones(id):
         observacion = cursor.fetchone()
         observacion = observacion[0] if observacion else ''
     return render_template('editar_observaciones.html', id=id, observacion=observacion)
+
+@app.route('/editar_observaciones_usuario/<int:id>', methods=['POST'])
+@login_required
+def editar_observaciones_usuario(id):
+    nuevas_observaciones = request.form['observaciones']
+    with sqlite3.connect("database.db") as conn:
+        conn.execute("UPDATE datos SET observaciones = ? WHERE id = ?", (nuevas_observaciones, id))
+    flash("Observaciones actualizadas correctamente.", "success")
+    return redirect(url_for('mostrar_usuarios'))
 
 # Ruta para mover proyectos finalizados o cancelados a registros
 @app.route('/mover_a_registros/<int:id>')
