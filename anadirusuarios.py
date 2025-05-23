@@ -2,7 +2,7 @@ import sqlite3
 from werkzeug.security import generate_password_hash
 
 usuarios = [
-    ("Thomas", generate_password_hash("1108")),
+    ("Thomas", generate_password_hash("1109")),
     ("Ricardo", generate_password_hash("1234"))
 ]
 
