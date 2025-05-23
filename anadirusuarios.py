@@ -5,6 +5,8 @@ from werkzeug.security import generate_password_hash
 # Usar DATABASE_URL de las variables de entorno (ideal para Render y producción)
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+print("DATABASE_URL:", DATABASE_URL)
+
 conn = psycopg2.connect(DATABASE_URL)
 cur = conn.cursor()
 
