@@ -35,9 +35,6 @@
         <label for="nombre">Nombre de cliente:</label><br/>
         <input type="text" id="nombre" name="nombre" required /><br/><br/>
 
-        <label for="cantidad">Cantidad:</label><br/>
-        <input type="number" id="cantidad" name="cantidad" min="1" required /><br/><br/>
-
         <label for="tipo_servicio">Tipo de servicio:</label><br/>
         <select id="tipo_servicio" name="tipo_servicio" required onchange="mostrarServicios()">
             <option value="">Seleccione...</option>
@@ -61,6 +58,9 @@
                 {% endfor %}
             </select><br/><br/>
         </div>
+
+        <label for="cantidad">Cantidad:</label><br/>
+        <input type="number" id="cantidad" name="cantidad" min="1" required /><br/><br/>
 
         <label for="observaciones">Observaciones:</label><br/>
         <textarea id="observaciones" name="observaciones" rows="3" cols="40"></textarea><br/><br/>

@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Progreso de Tareas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .progress-bar {
+            background: #e0e7ef;
+            border-radius: 10px;
+            width: 400px;      /* Aumenta el ancho aquí */
+            height: 35px;      /* Aumenta la altura aquí */
+            overflow: hidden;
+            border: 1px solid #b0bec5;
+            margin-bottom: 10px;
+        }
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #4CAF50 60%, #2d7aaf 100%);
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
 </head>
 <body>
     {% with mensajes = get_flashed_messages(with_categories=true) %}
@@ -52,6 +74,15 @@
             const porcentaje = total === 0 ? 0 : Math.round((completadas / total) * 100);
             document.getElementById('progressFill').style.width = porcentaje + '%';
             document.getElementById('porcentaje').innerText = porcentaje + '% completado';
+
+            // Secuencial: solo puedes marcar el siguiente si el anterior está marcado
+            for (let i = 0; i < checkboxes.length; i++) {
+                if (i === 0) {
+                    checkboxes[i].disabled = false;
+                } else {
+                    checkboxes[i].disabled = !checkboxes[i - 1].checked;
+                }
+            }
         }
         window.onload = actualizarProgreso;
         document.querySelectorAll('input[name="tarea"]').forEach(cb => {
