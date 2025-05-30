@@ -19,15 +19,6 @@ def index():
         tipo_servicio = request.form.get("tipo_servicio")
         observaciones = request.form.get("observaciones", "")
         fecha_de_solicitud = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print("Datos a guardar en la base de datos:")
-        print("nombre:", nombre)
-        print("cantidad:", cantidad)
-        print("servicio:", servicio)
-        print("tipo_servicio:", tipo_servicio)
-        print("progreso:", 0)
-        print("tareas_completadas:", "[]")
-        print("observaciones:", observaciones)
-        print("fecha_de_solicitud:", fecha_de_solicitud)
         with get_conn_progreso() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -46,10 +37,6 @@ def mostrar_usuarios():
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM trabajos_progreso")
         trabajos = cursor.fetchall()
-        print("----- DATOS MOSTRADOS EN LA TABLA DE USUARIOS -----")
-        for fila in trabajos:
-            print(f"Orden de columnas: id={fila[0]}, nombre={fila[1]}, tipo_servicio={fila[2]}, servicio={fila[3]}, cantidad={fila[4]}, progreso={fila[5]}, observaciones={fila[6]}, fecha_de_solicitud={fila[7]}, tareas_completadas={fila[8]}")
-        print("---------------------------------------------------")
     return render_template("usuarios.html", usuarios=trabajos)
 
 @clientes_bp.route("/progreso/<int:usuario_id>", methods=["GET", "POST"])
@@ -68,12 +55,12 @@ def progreso(usuario_id):
             trabajo_actual = {
                 "id": fila[0],
                 "nombre": fila[1],
-                "cantidad": fila[2],
+                "cantidad": fila[4],
                 "servicio": fila[3],
-                "tipo_servicio": fila[4],
+                "tipo_servicio": fila[2],
                 "progreso": fila[5],
-                "tareas_completadas": fila[6],
-                "observaciones": fila[7]
+                "tareas_completadas": fila[8],
+                "observaciones": fila[6]
             }
         servicio = trabajo_actual["servicio"]
         tipo_servicio = trabajo_actual["tipo_servicio"]
@@ -101,28 +88,18 @@ def progreso(usuario_id):
         trabajo = {
             "id": fila[0],
             "nombre": fila[1],
-            "cantidad": fila[2],
+            "cantidad": fila[4],
             "servicio": fila[3],
-            "tipo_servicio": fila[4],
+            "tipo_servicio": fila[2],
             "progreso": fila[5],
-            "tareas_completadas": fila[6],
-            "observaciones": fila[7]
+            "tareas_completadas": fila[8],
+            "observaciones": fila[6]
         }
     servicio = trabajo["servicio"]
     tipo_servicio = trabajo["tipo_servicio"]
     tareas = obtener_tareas_por_servicio(servicio, tipo_servicio)
     tareas_completadas = safe_json_loads(trabajo["tareas_completadas"])
     progreso = trabajo["progreso"]
-
-    # Imprime toda la información relevante
-    print("----- INFORMACIÓN AL ENTRAR A PROGRESO -----")
-    print("Trabajo:", trabajo)
-    print("Servicio:", servicio)
-    print("Tipo de servicio:", tipo_servicio)
-    print("Tareas:", tareas)
-    print("Tareas completadas:", tareas_completadas)
-    print("Progreso:", progreso)
-    print("--------------------------------------------")
 
     return render_template(
         "progreso.html",
