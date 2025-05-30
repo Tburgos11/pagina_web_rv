@@ -7,9 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         .select-scroll {
-            width: 250px;         /* Ajusta el ancho según tu preferencia */
-            max-height: 120px;    /* Altura máxima visible */
-            overflow-y: auto;     /* Scroll vertical si hay muchas opciones */
+            width: 250px;
+            max-height: 120px;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -26,7 +26,7 @@
       {% endif %}
     {% endwith %}
 <div class="barra-superior">
-    <form action="{{ url_for('logout') }}" method="get">
+    <form action="{{ url_for('auth.logout') }}" method="get">
         <button type="submit">Cerrar sesión</button>
     </form>
 </div>
@@ -68,8 +68,8 @@
         <button type="submit">Guardar</button>
     </form>
     <br/>
-    <button onclick="window.location.href='/usuarios'">Ver trabajos en progreso</button>
-    <button onclick="window.location.href='/registros'">Ver trabajos archivados</button>
+    <button onclick="window.location.href='{{ url_for('clientes.mostrar_usuarios') }}'">Ver trabajos en progreso</button>
+    <button onclick="window.location.href='{{ url_for('registros.mostrar_registros') }}'">Ver trabajos archivados</button>
 
 <script>
 function mostrarServicios() {

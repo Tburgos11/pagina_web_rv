@@ -7,7 +7,7 @@
 </head>
 <body>
 <div style="text-align:right; margin-bottom: 10px;">
-    <form action="{{ url_for('logout') }}" method="get" style="display:inline;">
+    <form action="{{ url_for('auth.logout') }}" method="get" style="display:inline;">
         <button type="submit">Cerrar sesión</button>
     </form>
 </div>
@@ -58,8 +58,8 @@
     {% endfor %}
 </table>
 <br>
-<button onclick="window.location.href='/'">Volver al formulario</button>
-<button onclick="window.location.href='/usuarios'">Ver trabajos en progreso</button>
+<button onclick="window.location.href='{{ url_for('clientes.index') }}'">Volver al formulario</button>
+<button onclick="window.location.href='{{ url_for('clientes.mostrar_usuarios') }}'">Ver trabajos en progreso</button>
 <a href="{{ url_for('descargar_db') }}" class="btn-descargar-db">Descargar base de datos</a>
 <a href="{{ url_for('descargar_registros_csv') }}">Descargar registros en CSV</a>
 

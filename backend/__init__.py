@@ -1,0 +1,1 @@
+# Este archivo permite que la carpeta backend sea un paquete Python.

@@ -18,7 +18,7 @@
       {% endif %}
     {% endwith %}
 <div class="barra-superior">
-    <form action="{{ url_for('logout') }}" method="get">
+    <form action="{{ url_for('auth.logout') }}" method="get">
         <button type="submit">Cerrar sesión</button>
     </form>
 </div>
@@ -36,18 +36,18 @@
     <tr>
         <td>{{ usuario[0] }}</td>
         <td>{{ usuario[1] }}</td>
-        <td>{{ usuario[2] }}</td>
+        <td>{{ usuario[4] }}</td>
         <td>{{ usuario[3] }}</td>
         <td>
-            <a href="{{ url_for('progreso', usuario_id=usuario[0]) }}" style="text-decoration: none; display:block; position:relative;">
+            <a href="{{ url_for('clientes.progreso', usuario_id=usuario[0]) }}">
                 <div class="progress-bar" style="cursor:pointer; position:relative;">
-                    <div class="progress-bar-fill" style="width: {{ usuario[4] }}%;"></div>
-                    <span class="progress-bar-number">{{ usuario[4] }}%</span>
+                    <div class="progress-bar-fill" style="width: {{ usuario[5] }}%;"></div>
+                    <span class="progress-bar-number">{{ usuario[5] }}%</span>
                 </div>
             </a>
         </td>
         <td>
-            <form action="{{ url_for('editar_observaciones_usuario', id=usuario[0]) }}" method="post">
+            <form action="{{ url_for('clientes.editar_observaciones_usuario', id=usuario[0]) }}" method="post">
                 <textarea name="observaciones" rows="2" cols="25">{{ usuario[6] }}</textarea>
                 <button type="submit">Guardar</button>
             </form>
@@ -56,7 +56,7 @@
     {% endfor %}
 </table>
 <br>
-<button onclick="window.location.href='/'">Volver al formulario</button>
-<button onclick="window.location.href='/registros'">Ver trabajos archivados</button>
+<button onclick="window.location.href='{{ url_for('clientes.index') }}'">Volver al formulario</button>
+<button onclick="window.location.href='{{ url_for('registros.mostrar_registros') }}'">Ver trabajos archivados</button>
 </body>
 </html>

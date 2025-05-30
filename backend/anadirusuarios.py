@@ -2,7 +2,7 @@ import sqlite3
 from werkzeug.security import generate_password_hash
 
 # Conexión a la base de datos SQLite
-conn = sqlite3.connect("trabajadores.db")
+conn = sqlite3.connect("../resources/db/trabajadores.db")
 cur = conn.cursor()
 
 # Crear la tabla si no existe

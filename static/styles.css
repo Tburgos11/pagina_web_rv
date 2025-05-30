@@ -1,3 +1,18 @@
+/* Paleta base */
+:root {
+    --color-1: #ff6d1f;
+    --color-2: #ff9e3d;
+    --color-3: #ffbe5c;
+    --color-4: #ffdf80;
+    --color-5: #fff4a3;
+    --color-text: #222;
+    --color-bg: #fff4a3;
+    --color-success-bg: #ffdf80;
+    --color-success-text: #ff6d1f;
+    --color-error-bg: #ffbe5c;
+    --color-error-text: #ff6d1f;
+}
+
 /* Reset básico */
 * {
     box-sizing: border-box;
@@ -7,14 +22,14 @@
 
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
+    background: linear-gradient(135deg, var(--color-5) 0%, var(--color-4) 100%);
     min-height: 100vh;
     padding: 24px;
-    color: #222;
+    color: var(--color-text);
 }
 
 h1 {
-    color: #2d7aaf;
+    color: var(--color-1);
     margin-bottom: 24px;
     font-size: 2rem;
     text-align: center;
@@ -28,7 +43,7 @@ h1 {
 }
 
 button, input[type="submit"] {
-    background: linear-gradient(90deg, #2d7aaf 60%, #4CAF50 100%);
+    background: linear-gradient(90deg, var(--color-1) 60%, var(--color-2) 100%);
     color: #fff;
     border: none;
     border-radius: 5px;
@@ -37,11 +52,11 @@ button, input[type="submit"] {
     cursor: pointer;
     margin: 4px 2px;
     transition: background 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 6px rgba(45, 122, 175, 0.08);
+    box-shadow: 0 2px 6px rgba(255, 109, 31, 0.08);
 }
 
 button:hover, input[type="submit"]:hover {
-    background: linear-gradient(90deg, #25618a 60%, #388e3c 100%);
+    background: linear-gradient(90deg, var(--color-2) 60%, var(--color-1) 100%);
 }
 
 .btn-cancelar {
@@ -58,17 +73,17 @@ form {
 
 input[type="text"], input[type="number"], input[type="date"], select, textarea {
     padding: 7px 10px;
-    border: 1px solid #b0bec5;
+    border: 1px solid var(--color-3);
     border-radius: 4px;
     margin-bottom: 10px;
     width: 100%;
     font-size: 1rem;
-    background: #f9fbfc;
+    background: #fff; /* Fondo blanco para todas las barras de texto */
     transition: border 0.2s;
 }
 
 input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
-    border: 1.5px solid #2d7aaf;
+    border: 1.5px solid var(--color-1);
     outline: none;
 }
 
@@ -79,17 +94,17 @@ table {
     border-radius: 12px;
     overflow: hidden;
     margin-bottom: 24px;
-    box-shadow: 0 2px 12px rgba(45, 122, 175, 0.07);
+    box-shadow: 0 2px 12px rgba(255, 109, 31, 0.07);
 }
 
 th, td {
     padding: 12px 10px;
-    border-bottom: 1px solid #e0e7ef;
+    border-bottom: 1px solid var(--color-4);
     text-align: left;
 }
 
 th {
-    background: linear-gradient(90deg, #2d7aaf 60%, #4CAF50 100%);
+    background: linear-gradient(90deg, var(--color-1) 60%, var(--color-2) 100%);
     color: #fff;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -99,7 +114,6 @@ tr:last-child td {
     border-bottom: none;
 }
 
-/* Centrar y agrandar texto en todas las celdas excepto la última (Observaciones) */
 table tr td:not(:last-child),
 table tr th:not(:last-child) {
     text-align: center;
@@ -109,19 +123,19 @@ table tr th:not(:last-child) {
 
 /* Barra de progreso */
 .progress-bar {
-    background: #e0e7ef;
+    background: var(--color-4);
     border-radius: 10px;
     width: 100%;
     height: 30px;
     overflow: hidden;
-    border: 1px solid #b0bec5;
+    border: 1px solid var(--color-3);
     margin-bottom: 0;
     display: flex;
     align-items: center;
 }
 
 .progress-bar-fill {
-    background: linear-gradient(90deg, #4CAF50 60%, #2d7aaf 100%);
+    background: linear-gradient(90deg, var(--color-2) 60%, var(--color-1) 100%);
     height: 100%;
     transition: width 0.3s;
     display: flex;
@@ -137,7 +151,7 @@ table tr th:not(:last-child) {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    color: #ffffff;
+    color: #fff;
     font-weight: bold;
     font-size: 1.1em;
     z-index: 2;
@@ -145,18 +159,18 @@ table tr th:not(:last-child) {
 }
 
 .mensaje-success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+    border: 1px solid var(--color-4);
     padding: 10px;
     margin-bottom: 10px;
     border-radius: 5px;
 }
 
 .mensaje-error, .mensaje-danger {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background: var(--color-error-bg);
+    color: var(--color-error-text);
+    border: 1px solid var(--color-2);
     padding: 10px;
     margin-bottom: 10px;
     border-radius: 5px;
@@ -184,13 +198,13 @@ table tr th:not(:last-child) {
     border-radius: 10px;
     max-width: 400px;
     margin: auto;
-    box-shadow: 0 2px 12px rgba(45, 122, 175, 0.12);
+    box-shadow: 0 2px 12px rgba(255, 109, 31, 0.12);
     text-align: center;
 }
 
 #textoObservacion {
     white-space: pre-wrap;
-    color: #222;
+    color: var(--color-text);
     font-size: 1rem;
 }
 

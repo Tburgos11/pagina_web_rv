@@ -2,92 +2,79 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progreso de Tareas</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Pedido de {{ trabajo['nombre'] }}</title>
     <style>
-        .progress-bar {
-            background: #e0e7ef;
-            border-radius: 10px;
-            width: 400px;      /* Aumenta el ancho aquí */
-            height: 35px;      /* Aumenta la altura aquí */
+        .barra-progreso {
+            width: 100%;
+            background-color: #eee;
+            border-radius: 8px;
+            margin: 20px 0;
+            height: 30px;
             overflow: hidden;
-            border: 1px solid #b0bec5;
-            margin-bottom: 10px;
         }
-        .progress-bar-fill {
-            background: linear-gradient(90deg, #4CAF50 60%, #2d7aaf 100%);
+        .barra-progreso-interna {
             height: 100%;
-            transition: width 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
+            background-color: #4caf50;
+            width: {{ progreso }}%;
+            transition: width 0.5s;
+            text-align: center;
+            color: white;
+            line-height: 30px;
             font-weight: bold;
-            font-size: 1.2em;
         }
     </style>
 </head>
 <body>
-    {% with mensajes = get_flashed_messages(with_categories=true) %}
-      {% if mensajes %}
-        <div>
-          {% for categoria, mensaje in mensajes %}
-            <div class="mensaje-{{ categoria }}">
-              {{ mensaje }}
-            </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
           {% endfor %}
-        </div>
+        </ul>
       {% endif %}
     {% endwith %}
-    <div class="barra-superior">
-        <form action="{{ url_for('logout') }}" method="get">
-            <button type="submit">Cerrar sesión</button>
-        </form>
+    <h1>Pedido de "{{ trabajo['nombre'] }}"</h1>
+    <div class="barra-progreso">
+        <div id="barraProgreso" class="barra-progreso-interna">{{ progreso }}%</div>
     </div>
-    <h1>Progreso de Tareas</h1>
-    <div class="progress-bar">
-        <div class="progress-bar-fill" id="progressFill"></div>
-    </div>
-    <div id="porcentaje">{{ progreso|default(0) }}% completado</div>
-    <form id="tareasForm" method="POST">
-        {% for tarea in tareas %}
-        <div class="tarea">
-            <input type="checkbox" id="tarea{{ loop.index0 }}" name="tarea" value="{{ tarea }}"
-                {% if tarea in tareas_completadas %}checked{% endif %}>
-            <label for="tarea{{ loop.index0 }}">{{ tarea }}</label>
-        </div>
-        {% endfor %}
-        <button type="submit" name="accion" value="guardar">Guardar cambios</button>
-        <button type="submit" name="accion" value="cancelar" class="btn-cancelar">Cancelar</button>
+    <h2>Tareas por completar</h2>
+    <form id="formTareas" method="POST">
+        <ul class="tareas">
+            {% for tarea in tareas %}
+                <li>
+                    <input type="checkbox" name="tareas_completadas" value="{{ tarea }}" id="tarea{{ loop.index0 }}"
+                        {% if tarea in tareas_completadas %}checked{% endif %} onchange="actualizarProgreso()">
+                    <label for="tarea{{ loop.index0 }}" class="{% if tarea in tareas_completadas %}completada{% endif %}">
+                        {{ tarea }}
+                    </label>
+                </li>
+            {% endfor %}
+        </ul>
+        <button type="submit">Guardar progreso</button>
     </form>
-    <br>
-    <button onclick="window.location.href='/usuarios'">Volver</button>
+    <button type="button" onclick="window.location.href='{{ url_for('clientes.mostrar_usuarios') }}';">Volver</button>
     <script>
         function actualizarProgreso() {
-            const checkboxes = document.querySelectorAll('input[name="tarea"]');
+            const checkboxes = document.querySelectorAll('input[name="tareas_completadas"]');
             const total = checkboxes.length;
             let completadas = 0;
+            checkboxes.forEach(cb => { if (cb.checked) completadas++; });
+            const progreso = total ? Math.round((completadas / total) * 100) : 0;
+            const barra = document.getElementById('barraProgreso');
+            barra.style.width = progreso + "%";
+            barra.textContent = progreso + "%";
+            // Actualiza el estilo de la tarea
             checkboxes.forEach(cb => {
-                if (cb.checked) completadas++;
-            });
-            const porcentaje = total === 0 ? 0 : Math.round((completadas / total) * 100);
-            document.getElementById('progressFill').style.width = porcentaje + '%';
-            document.getElementById('porcentaje').innerText = porcentaje + '% completado';
-
-            // Secuencial: solo puedes marcar el siguiente si el anterior está marcado
-            for (let i = 0; i < checkboxes.length; i++) {
-                if (i === 0) {
-                    checkboxes[i].disabled = false;
+                const label = cb.nextElementSibling;
+                if (cb.checked) {
+                    label.classList.add('completada');
                 } else {
-                    checkboxes[i].disabled = !checkboxes[i - 1].checked;
+                    label.classList.remove('completada');
                 }
-            }
+            });
         }
-        window.onload = actualizarProgreso;
-        document.querySelectorAll('input[name="tarea"]').forEach(cb => {
-            cb.addEventListener('change', actualizarProgreso);
-        });
     </script>
 </body>
 </html>
