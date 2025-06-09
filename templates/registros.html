@@ -37,11 +37,13 @@
     <tr>
         <th>ID</th>
         <th>Nombre</th>
-        <th>Cantidad</th>
+        <th>Tipo de Servicio</th>
         <th>Servicio</th>
+        <th>Cantidad</th>
         <th>Estado</th>
-        <th>Fecha de entrega</th>
-        <th>Ver observaciones</th>
+        <th>Observaciones</th>
+        <th>Fecha de Solicitud</th>
+        <th>Fecha de Entrega</th>
     </tr>
     {% for registro in registros %}
     <tr>
@@ -50,18 +52,18 @@
         <td>{{ registro[2] }}</td>
         <td>{{ registro[3] }}</td>
         <td>{{ registro[4] }}</td>
-        <td>{{ registro[7] or '' }}</td>
+        <td>{{ registro[5] }}</td>
         <td style="text-align:center;">
             <button type="button" onclick="mostrarObservacion('{{ registro[6]|escape }}')">Ver</button>
         </td>
+        <td>{{ registro[7] or '' }}</td>
+        <td>{{ registro[8] or '' }}</td>
     </tr>
     {% endfor %}
 </table>
 <br>
 <button onclick="window.location.href='{{ url_for('clientes.index') }}'">Volver al formulario</button>
 <button onclick="window.location.href='{{ url_for('clientes.mostrar_usuarios') }}'">Ver trabajos en progreso</button>
-<a href="{{ url_for('descargar_db') }}" class="btn-descargar-db">Descargar base de datos</a>
-<a href="{{ url_for('descargar_registros_csv') }}">Descargar registros en CSV</a>
 
 <!-- Modal para mostrar observaciones -->
 <div id="modalObservacion" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">

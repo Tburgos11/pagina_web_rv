@@ -7,8 +7,8 @@ registros_bp = Blueprint('registros', __name__)
 @registros_bp.route("/registros")
 @login_required
 def mostrar_registros():
-    with get_conn() as conn:
+    with get_conn_archivados() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM registros")
+        cursor.execute("SELECT * FROM trabajos_archivados")
         registros = cursor.fetchall()
     return render_template("registros.html", registros=registros)

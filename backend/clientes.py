@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from .db_utils import get_conn_progreso
+from .db_utils import get_conn_progreso, get_conn_archivados
 from .servicios import leer_servicios, obtener_tareas_por_servicio
 import json
 from datetime import datetime
@@ -60,20 +60,53 @@ def progreso(usuario_id):
                 "tipo_servicio": fila[2],
                 "progreso": fila[5],
                 "tareas_completadas": fila[8],
-                "observaciones": fila[6]
+                "observaciones": fila[6],
+                "fecha_de_solicitud": fila[7]
             }
         servicio = trabajo_actual["servicio"]
         tipo_servicio = trabajo_actual["tipo_servicio"]
         tareas = obtener_tareas_por_servicio(servicio, tipo_servicio)
-        nuevas_tareas = request.form.getlist("tareas_completadas")
+        nuevas_tareas = [t.strip() for t in request.form.getlist("tareas_completadas")]
         progreso = int(len(nuevas_tareas) / len(tareas) * 100) if tareas else 0
+
         with get_conn_progreso() as conn:
             cursor = conn.cursor()
+            # Actualiza el progreso y tareas completadas
             cursor.execute(
                 "UPDATE trabajos_progreso SET tareas_completadas = ?, progreso = ? WHERE id = ?",
                 (json.dumps(nuevas_tareas), progreso, usuario_id)
             )
             conn.commit()
+
+            # Si el progreso es 100%, archiva y elimina
+            if progreso == 100:
+                fecha_de_entrega = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                estado = "Completado"
+                # 1. Insertar en archivados
+                with get_conn_archivados() as conn_archivados:
+                    cursor_archivados = conn_archivados.cursor()
+                    cursor_archivados.execute(
+                        "INSERT INTO trabajos_archivados (nombre, tipo_servicio, servicio, cantidad, estado, observaciones, fecha_de_solicitud, fecha_de_entrega) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            trabajo_actual["nombre"],
+                            trabajo_actual["tipo_servicio"],
+                            trabajo_actual["servicio"],
+                            trabajo_actual["cantidad"],
+                            estado,
+                            trabajo_actual["observaciones"],
+                            trabajo_actual["fecha_de_solicitud"],
+                            fecha_de_entrega
+                        )
+                    )
+                    conn_archivados.commit()
+                # 2. Eliminar de trabajos_progreso en la base correcta
+                with get_conn_progreso() as conn_progreso:
+                    cursor_progreso = conn_progreso.cursor()
+                    cursor_progreso.execute("DELETE FROM trabajos_progreso WHERE id = ?", (usuario_id,))
+                    conn_progreso.commit()
+                flash("¡Trabajo completado y archivado con éxito!", "mensaje-success")
+                return redirect(url_for("clientes.index"))
+
         flash("¡Progreso guardado con éxito!", "mensaje-success")
         return redirect(url_for("clientes.mostrar_usuarios"))
 
