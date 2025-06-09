@@ -5,78 +5,79 @@
     <title>Registrar Trabajo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .select-scroll {
-            width: 250px;
-            max-height: 120px;
-            overflow-y: auto;
-        }
-    </style>
 </head>
 <body>
-    {% with mensajes = get_flashed_messages(with_categories=true) %}
-      {% if mensajes %}
-        <div>
-          {% for categoria, mensaje in mensajes %}
-            <div class="mensaje-{{ categoria }}">
-              {{ mensaje }}
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-<div class="barra-superior">
+{% extends "base.html" %}
+{% block title %}Registrar Trabajo{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-end mb-3">
     <form action="{{ url_for('auth.logout') }}" method="get">
-        <button type="submit">Cerrar sesión</button>
+        <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
     </form>
 </div>
-    <h1>Registrar Trabajo</h1>
+<div class="card p-4">
+    <h1 class="mb-4">Registrar Trabajo</h1>
     <form method="POST">
-        <label for="nombre">Nombre de cliente:</label><br/>
-        <input type="text" id="nombre" name="nombre" required /><br/><br/>
-
-        <label for="tipo_servicio">Tipo de servicio:</label><br/>
-        <select id="tipo_servicio" name="tipo_servicio" required onchange="mostrarServicios()">
-            <option value="">Seleccione...</option>
-            <option value="digital">Digital</option>
-            <option value="fisico">Físico</option>
-        </select><br/><br/>
-
-        <div id="servicio_digital" style="display:none;">
-            <label for="servicio_digital_select">Servicio digital:</label><br/>
-            <select id="servicio_digital_select" name="servicio" class="select-scroll">
+        <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" id="nombre" name="nombre" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Cantidad</label>
+            <input type="number" id="cantidad" name="cantidad" class="form-control" min="1" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tipo de servicio</label>
+            <select id="tipo_servicio" name="tipo_servicio" class="form-select" required onchange="mostrarServicios()">
+                <option value="">Seleccione...</option>
+                <option value="digital">Digital</option>
+                <option value="fisico">Físico</option>
+            </select>
+        </div>
+        <div class="mb-3" id="servicio_digital" style="display:none;">
+            <label class="form-label">Servicio digital</label>
+            <select id="servicio_digital_select" name="servicio" class="form-select select-scroll">
                 {% for servicio in servicios_digitales %}
                     <option value="{{ servicio }}">{{ servicio }}</option>
                 {% endfor %}
-            </select><br/><br/>
+            </select>
         </div>
-        <div id="servicio_fisico" style="display:none;">
-            <label for="servicio_fisico_select">Servicio físico:</label><br/>
-            <select id="servicio_fisico_select" name="servicio" class="select-scroll">
+        <div class="mb-3" id="servicio_fisico" style="display:none;">
+            <label class="form-label">Servicio físico</label>
+            <select id="servicio_fisico_select" name="servicio" class="form-select select-scroll">
                 {% for servicio in servicios_fisicos %}
                     <option value="{{ servicio }}">{{ servicio }}</option>
                 {% endfor %}
-            </select><br/><br/>
+            </select>
         </div>
-
-        <label for="cantidad">Cantidad:</label><br/>
-        <input type="number" id="cantidad" name="cantidad" min="1" required /><br/><br/>
-
-        <label for="observaciones">Observaciones:</label><br/>
-        <textarea id="observaciones" name="observaciones" rows="3" cols="40"></textarea><br/><br/>
-
-        <button type="submit">Guardar</button>
+        <div class="mb-3">
+            <label class="form-label">Observaciones</label>
+            <textarea id="observaciones" name="observaciones" class="form-control" rows="3" cols="40"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Registrar</button>
     </form>
-    <br/>
-    <button onclick="window.location.href='{{ url_for('clientes.mostrar_usuarios') }}'">Ver trabajos en progreso</button>
-    <button onclick="window.location.href='{{ url_for('registros.mostrar_registros') }}'">Ver trabajos archivados</button>
-
+    <div class="mt-3 d-flex gap-2">
+        <a href="{{ url_for('clientes.mostrar_usuarios') }}" class="btn btn-info">Ver trabajos en progreso</a>
+        <a href="{{ url_for('registros.mostrar_registros') }}" class="btn btn-secondary">Ver trabajos archivados</a>
+    </div>
+</div>
+<style>
+    .select-scroll {
+        width: 100%;
+        max-height: 120px;
+        overflow-y: auto;
+    }
+</style>
 <script>
 function mostrarServicios() {
     var tipo = document.getElementById('tipo_servicio').value;
     document.getElementById('servicio_digital').style.display = (tipo === 'digital') ? 'block' : 'none';
     document.getElementById('servicio_fisico').style.display = (tipo === 'fisico') ? 'block' : 'none';
+    document.getElementById('servicio_digital_select').disabled = (tipo !== 'digital');
+    document.getElementById('servicio_fisico_select').disabled = (tipo !== 'fisico');
 }
+window.onload = mostrarServicios;
 </script>
+{% endblock %}
 </body>
 </html>

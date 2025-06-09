@@ -6,17 +6,25 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <!-- Barra superior con botón de cerrar sesión -->
-    <div style="text-align:right; margin-bottom: 10px;">
-        <form action="{{ url_for('auth.logout') }}" method="get" style="display:inline;">
-            <button type="submit">Cerrar sesión</button>
+    {% extends "base.html" %}
+    {% block title %}Editar Observaciones{% endblock %}
+    {% block content %}
+    <div class="d-flex justify-content-end mb-3">
+        <form action="{{ url_for('auth.logout') }}" method="get">
+            <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
         </form>
     </div>
-    <h1>Editar Observaciones para registro #{{ id }}</h1>
-    <form method="POST">
-        <textarea name="observaciones" rows="5" cols="40">{{ observacion }}</textarea><br><br>
-        <button type="submit">Guardar</button>
-        <button type="button" onclick="window.location.href='{{ url_for('registros.mostrar_registros') }}';">Cancelar</button>
-    </form>
+    <div class="card p-4">
+        <h2 class="mb-4">Editar Observaciones para registro #{{ id }}</h2>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="observaciones" class="form-label">Observaciones</label>
+                <textarea id="observaciones" name="observaciones" rows="5" class="form-control">{{ observacion }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a href="{{ url_for('registros.mostrar_registros') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+    {% endblock %}
 </body>
 </html>
