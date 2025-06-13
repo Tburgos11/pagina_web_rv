@@ -28,25 +28,21 @@
         </div>
         <div class="mb-3">
             <label class="form-label">Tipo de servicio</label>
-            <select id="tipo_servicio" name="tipo_servicio" class="form-select" required onchange="mostrarServicios()">
-                <option value="">Seleccione...</option>
+            <select id="tipo_servicio" name="tipo_servicio" class="form-select" required>
+                <option value="" disabled selected>Selecciona un tipo</option>
                 <option value="digital">Digital</option>
                 <option value="fisico">Físico</option>
             </select>
         </div>
-        <div class="mb-3" id="servicio_digital" style="display:none;">
-            <label class="form-label">Servicio digital</label>
-            <select id="servicio_digital_select" name="servicio" class="form-select select-scroll">
-                {% for servicio in servicios_digitales %}
-                    <option value="{{ servicio }}">{{ servicio }}</option>
+        <div class="mb-3">
+            <label class="form-label">Servicio</label>
+            <select id="servicio" name="servicio" class="form-select" required>
+                <option value="" disabled selected>Selecciona un servicio</option>
+                {% for s in servicios_digitales %}
+                <option value="{{ s }}" data-tipo="digital">{{ s }}</option>
                 {% endfor %}
-            </select>
-        </div>
-        <div class="mb-3" id="servicio_fisico" style="display:none;">
-            <label class="form-label">Servicio físico</label>
-            <select id="servicio_fisico_select" name="servicio" class="form-select select-scroll">
-                {% for servicio in servicios_fisicos %}
-                    <option value="{{ servicio }}">{{ servicio }}</option>
+                {% for s in servicios_fisicos %}
+                <option value="{{ s }}" data-tipo="fisico">{{ s }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -54,30 +50,34 @@
             <label class="form-label">Observaciones</label>
             <textarea id="observaciones" name="observaciones" class="form-control" rows="3" cols="40"></textarea>
         </div>
-        <button type="submit" class="btn btn-primary">Registrar</button>
+        <button type="submit" class="btn btn-primary w-100">Registrar</button>
     </form>
     <div class="mt-3 d-flex gap-2">
         <a href="{{ url_for('clientes.mostrar_usuarios') }}" class="btn btn-info">Ver trabajos en progreso</a>
         <a href="{{ url_for('registros.mostrar_registros') }}" class="btn btn-secondary">Ver trabajos archivados</a>
     </div>
 </div>
-<style>
-    .select-scroll {
-        width: 100%;
-        max-height: 120px;
-        overflow-y: auto;
-    }
-</style>
 <script>
-function mostrarServicios() {
-    var tipo = document.getElementById('tipo_servicio').value;
-    document.getElementById('servicio_digital').style.display = (tipo === 'digital') ? 'block' : 'none';
-    document.getElementById('servicio_fisico').style.display = (tipo === 'fisico') ? 'block' : 'none';
-    document.getElementById('servicio_digital_select').disabled = (tipo !== 'digital');
-    document.getElementById('servicio_fisico_select').disabled = (tipo !== 'fisico');
-}
-window.onload = mostrarServicios;
+document.addEventListener("DOMContentLoaded", function() {
+    const tipoServicio = document.getElementById('tipo_servicio');
+    const servicio = document.getElementById('servicio');
+    // Guarda las opciones originales
+    const opcionesOriginales = Array.from(servicio.options);
+
+    tipoServicio.addEventListener('change', function() {
+        const tipo = tipoServicio.value;
+        // Limpia las opciones
+        servicio.innerHTML = '<option value="" disabled selected>Selecciona un servicio</option>';
+        // Agrega solo las opciones del tipo seleccionado
+        opcionesOriginales.forEach(opt => {
+            if(opt.dataset.tipo === tipo) {
+                servicio.appendChild(opt.cloneNode(true));
+            }
+        });
+    });
+});
 </script>
 {% endblock %}
 </body>
+</html>
 </html>

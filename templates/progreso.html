@@ -26,55 +26,76 @@
     </style>
 </head>
 <body>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul class="flashes">
-          {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
-    <h1>Pedido de "{{ trabajo['nombre'] }}"</h1>
-    <div class="barra-progreso">
-        <div id="barraProgreso" class="barra-progreso-interna">{{ progreso }}%</div>
+    {% extends "base.html" %}
+    {% block title %}Progreso del trabajo{% endblock %}
+    {% block content %}
+    <div class="container" style="max-width: 700px; margin: 0 auto;">
+        <h2 class="mb-4" style="color: var(--color-1); text-align: center;">Progreso del trabajo</h2>
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(255, 109, 31, 0.07); padding: 24px;">
+            <p><strong>Nombre:</strong> {{ trabajo["nombre"] }}</p>
+            <p><strong>Servicio:</strong> {{ trabajo["servicio"] }}</p>
+            <p><strong>Tipo de Servicio:</strong> {{ trabajo["tipo_servicio"] }}</p>
+            <p><strong>Progreso:</strong>
+                <div class="progress-bar" style="margin: 8px 0;">
+                    <div class="progress-bar-fill" style="width: {{ progreso }}%;">
+                        <span class="progress-bar-number">{{ progreso }}%</span>
+                    </div>
+                </div>
+            </p>
+            <form method="post" id="form-progreso">
+                <h4>Pasos del trabajo</h4>
+                <ul style="list-style: none; padding-left: 0;" id="lista-pasos">
+                    {% if pasos %}
+                        {% for paso in pasos %}
+                        <li class="tarea">
+                            <label>
+                                <input type="checkbox" name="tareas_completadas" value="{{ paso }}" class="paso-checkbox"
+                                    {% if paso in tareas_completadas %}checked{% endif %}>
+                                {{ paso }}
+                            </label>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li>No hay pasos registrados para este trabajo.</li>
+                    {% endif %}
+                </ul>
+                <button type="submit" class="btn btn-primary w-100">Guardar progreso</button>
+            </form>
+        </div>
     </div>
-    <h2>Tareas por completar</h2>
-    <form id="formTareas" method="POST">
-        <ul class="tareas">
-            {% for tarea in tareas %}
-                <li>
-                    <input type="checkbox" name="tareas_completadas" value="{{ tarea }}" id="tarea{{ loop.index0 }}"
-                        {% if tarea in tareas_completadas %}checked{% endif %} onchange="actualizarProgreso()">
-                    <label for="tarea{{ loop.index0 }}" class="{% if tarea in tareas_completadas %}completada{% endif %}">
-                        {{ tarea }}
-                    </label>
-                </li>
-            {% endfor %}
-        </ul>
-        <button type="submit">Guardar progreso</button>
-    </form>
-    <button type="button" onclick="window.location.href='{{ url_for('clientes.mostrar_usuarios') }}';">Volver</button>
     <script>
-        function actualizarProgreso() {
-            const checkboxes = document.querySelectorAll('input[name="tareas_completadas"]');
-            const total = checkboxes.length;
-            let completadas = 0;
-            checkboxes.forEach(cb => { if (cb.checked) completadas++; });
-            const progreso = total ? Math.round((completadas / total) * 100) : 0;
-            const barra = document.getElementById('barraProgreso');
-            barra.style.width = progreso + "%";
-            barra.textContent = progreso + "%";
-            // Actualiza el estilo de la tarea
-            checkboxes.forEach(cb => {
-                const label = cb.nextElementSibling;
-                if (cb.checked) {
-                    label.classList.add('completada');
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkboxes = Array.from(document.querySelectorAll('.paso-checkbox'));
+        // Inicializa el estado de los checkboxes según la lógica de orden
+        function actualizarCheckboxes() {
+            for (let i = 0; i < checkboxes.length; i++) {
+                if (i === 0) {
+                    checkboxes[i].disabled = false;
                 } else {
-                    label.classList.remove('completada');
+                    checkboxes[i].disabled = !checkboxes[i - 1].checked;
                 }
-            });
+            }
         }
+        // Al hacer click en un checkbox
+        checkboxes.forEach((checkbox, idx) => {
+            checkbox.addEventListener('change', function() {
+                if (checkbox.checked) {
+                    // Si se marca, marca todos los anteriores
+                    for (let i = 0; i < idx; i++) {
+                        checkboxes[i].checked = true;
+                    }
+                } else {
+                    // Si se desmarca, desmarca todos los posteriores
+                    for (let i = idx + 1; i < checkboxes.length; i++) {
+                        checkboxes[i].checked = false;
+                    }
+                }
+                actualizarCheckboxes();
+            });
+        });
+        actualizarCheckboxes();
+    });
     </script>
+    {% endblock %}
 </body>
 </html>

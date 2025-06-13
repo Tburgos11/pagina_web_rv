@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
-from .db_utils import get_conn_usuarios
+import requests
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -18,29 +18,41 @@ def init_login_manager(app):
 
     @login_manager.user_loader
     def load_user(user_id):
-        with get_conn_usuarios() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, username, password FROM trabajadores WHERE id = ?", (user_id,))
-            row = cursor.fetchone()
-            if row:
-                return User(*row)
+        # Buscar el usuario en Firebase por su id (username)
+        try:
+            resp = requests.get(FIREBASE_USERS_URL)
+            if resp.status_code == 200:
+                usuarios = resp.json()
+                if usuarios and user_id in usuarios:
+                    return User(id_=user_id, username=user_id, password=usuarios[user_id]["password"])
+        except Exception as e:
+            print("Error en load_user:", e)
         return None
+
+FIREBASE_USERS_URL = "https://base-datos-rv-default-rtdb.firebaseio.com/usuarios.json"
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        with get_conn_usuarios() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, username, password FROM trabajadores WHERE username = ?", (username,))
-            user = cursor.fetchone()
-            if user and check_password_hash(user[2], password):
-                user_obj = User(*user)
-                login_user(user_obj)
-                return redirect(url_for("clientes.index"))
-            else:
+        try:
+            resp = requests.get(FIREBASE_USERS_URL)
+            if resp.status_code == 200:
+                usuarios = resp.json()
+                if usuarios and username in usuarios:
+                    if usuarios[username]["password"] == password:
+                        user = User(id_=username, username=username, password=password)
+                        login_user(user)
+                        flash("Inicio de sesión exitoso", "mensaje-exito")
+                        print("Redirigiendo a index...")  # Depuración
+                        return redirect(url_for("index"))
                 flash("Usuario o contraseña incorrectos", "mensaje-error")
+            else:
+                flash(f"Error Firebase: {resp.status_code} {resp.text}", "mensaje-error")
+        except Exception as e:
+            print("Error al conectar con Firebase:", e)
+            flash(f"Error al conectar con la base de datos: {e}", "mensaje-error")
     return render_template("login.html")
 
 @auth_bp.route("/logout")

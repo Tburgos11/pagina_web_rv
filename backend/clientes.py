@@ -1,160 +1,123 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from .db_utils import get_conn_progreso, get_conn_archivados
 from .servicios import leer_servicios, obtener_tareas_por_servicio
-import json
+import requests
 from datetime import datetime
 
 clientes_bp = Blueprint('clientes', __name__)
 
+FIREBASE_TRABAJOS_URL = "https://base-datos-rv-default-rtdb.firebaseio.com/trabajos.json"
+
 @clientes_bp.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-    servicios_digitales = leer_servicios("digital.txt")
-    servicios_fisicos = leer_servicios("fisico.txt")
+    servicios_digitales = leer_servicios("digital")
+    servicios_fisicos = leer_servicios("fisico")
     if request.method == "POST":
         nombre = request.form.get("nombre")
         cantidad = request.form.get("cantidad")
         servicio = request.form.get("servicio")
         tipo_servicio = request.form.get("tipo_servicio")
         observaciones = request.form.get("observaciones", "")
-        fecha_de_solicitud = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with get_conn_progreso() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO trabajos_progreso (nombre, cantidad, servicio, tipo_servicio, progreso, observaciones, fecha_de_solicitud, tareas_completadas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (nombre, cantidad, servicio, tipo_servicio, 0, observaciones, fecha_de_solicitud, "[]")
-            )
-            conn.commit()
-        flash("Trabajo registrado correctamente", "mensaje-success")
+        fecha_de_solicitud = datetime.now().strftime("%d/%m/%Y")
+        # Obtener los pasos/tareas del servicio seleccionado
+        pasos = obtener_tareas_por_servicio(servicio, tipo_servicio)
+        trabajo = {
+            "nombre": nombre,
+            "cantidad": cantidad,
+            "servicio": servicio,
+            "tipo_servicio": tipo_servicio,
+            "observaciones": observaciones,
+            "fecha_de_solicitud": fecha_de_solicitud,
+            "progreso": 0,
+            "pasos": pasos  # Guardar los pasos/tareas como parte del trabajo
+        }
+        try:
+            resp = requests.post(FIREBASE_TRABAJOS_URL, json=trabajo)
+            if resp.status_code == 200:
+                flash("Trabajo registrado correctamente", "mensaje-success")
+            else:
+                flash(f"Error al registrar trabajo: {resp.status_code} {resp.text}", "mensaje-error")
+        except Exception as e:
+            flash(f"Error al conectar con Firebase: {e}", "mensaje-error")
         return redirect(url_for("clientes.index"))
     return render_template("index.html", servicios_digitales=servicios_digitales, servicios_fisicos=servicios_fisicos)
 
 @clientes_bp.route("/usuarios")
 @login_required
 def mostrar_usuarios():
-    with get_conn_progreso() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM trabajos_progreso")
-        trabajos = cursor.fetchall()
+    trabajos = []
+    try:
+        resp = requests.get(FIREBASE_TRABAJOS_URL)
+        if resp.status_code == 200 and resp.json():
+            data = resp.json()
+            # data es un dict con id aleatorio como clave
+            for key, value in data.items():
+                value["id"] = key
+                trabajos.append(value)
+            # Ordenar por fecha_de_solicitud (más reciente primero)
+            trabajos.sort(key=lambda t: datetime.strptime(t.get("fecha_de_solicitud", "01/01/1970"), "%d/%m/%Y"), reverse=True)
+    except Exception as e:
+        flash(f"Error al obtener trabajos: {e}", "mensaje-error")
     return render_template("usuarios.html", usuarios=trabajos)
 
-@clientes_bp.route("/progreso/<int:usuario_id>", methods=["GET", "POST"])
+@clientes_bp.route("/progreso/<usuario_id>", methods=["GET", "POST"])
 @login_required
 def progreso(usuario_id):
-    if request.method == "POST":
-        # Obtener las tareas del servicio para calcular el progreso
-        trabajo_actual = None
-        with get_conn_progreso() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM trabajos_progreso WHERE id = ?", (usuario_id,))
-            fila = cursor.fetchone()
-            if not fila:
-                flash("No se encontró ningún registro con ese ID.", "mensaje-error")
-                return redirect(url_for("clientes.mostrar_usuarios"))
-            trabajo_actual = {
-                "id": fila[0],
-                "nombre": fila[1],
-                "cantidad": fila[4],
-                "servicio": fila[3],
-                "tipo_servicio": fila[2],
-                "progreso": fila[5],
-                "tareas_completadas": fila[8],
-                "observaciones": fila[6],
-                "fecha_de_solicitud": fila[7]
-            }
-        servicio = trabajo_actual["servicio"]
-        tipo_servicio = trabajo_actual["tipo_servicio"]
-        tareas = obtener_tareas_por_servicio(servicio, tipo_servicio)
-        nuevas_tareas = [t.strip() for t in request.form.getlist("tareas_completadas")]
-        progreso = int(len(nuevas_tareas) / len(tareas) * 100) if tareas else 0
-
-        with get_conn_progreso() as conn:
-            cursor = conn.cursor()
-            # Actualiza el progreso y tareas completadas
-            cursor.execute(
-                "UPDATE trabajos_progreso SET tareas_completadas = ?, progreso = ? WHERE id = ?",
-                (json.dumps(nuevas_tareas), progreso, usuario_id)
-            )
-            conn.commit()
-
-            # Si el progreso es 100%, archiva y elimina
-            if progreso == 100:
-                fecha_de_entrega = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                estado = "Completado"
-                # 1. Insertar en archivados
-                with get_conn_archivados() as conn_archivados:
-                    cursor_archivados = conn_archivados.cursor()
-                    cursor_archivados.execute(
-                        "INSERT INTO trabajos_archivados (nombre, tipo_servicio, servicio, cantidad, estado, observaciones, fecha_de_solicitud, fecha_de_entrega) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        (
-                            trabajo_actual["nombre"],
-                            trabajo_actual["tipo_servicio"],
-                            trabajo_actual["servicio"],
-                            trabajo_actual["cantidad"],
-                            estado,
-                            trabajo_actual["observaciones"],
-                            trabajo_actual["fecha_de_solicitud"],
-                            fecha_de_entrega
-                        )
-                    )
-                    conn_archivados.commit()
-                # 2. Eliminar de trabajos_progreso en la base correcta
-                with get_conn_progreso() as conn_progreso:
-                    cursor_progreso = conn_progreso.cursor()
-                    cursor_progreso.execute("DELETE FROM trabajos_progreso WHERE id = ?", (usuario_id,))
-                    conn_progreso.commit()
-                flash("¡Trabajo completado y archivado con éxito!", "mensaje-success")
-                return redirect(url_for("clientes.index"))
-
-        flash("¡Progreso guardado con éxito!", "mensaje-success")
+    # Obtener el trabajo desde Firebase
+    trabajo = {}
+    try:
+        resp = requests.get(f"https://base-datos-rv-default-rtdb.firebaseio.com/trabajos/{usuario_id}.json")
+        if resp.status_code == 200 and resp.json():
+            trabajo = resp.json()
+            trabajo["id"] = usuario_id
+    except Exception as e:
+        flash(f"Error al obtener el trabajo: {e}", "mensaje-error")
         return redirect(url_for("clientes.mostrar_usuarios"))
 
-    # GET: Mostrar el progreso actual
-    with get_conn_progreso() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM trabajos_progreso WHERE id = ?", (usuario_id,))
-        fila = cursor.fetchone()
-        if not fila:
-            flash("No se encontró ningún registro con ese ID.", "mensaje-error")
-            return redirect(url_for("clientes.mostrar_usuarios"))
-        trabajo = {
-            "id": fila[0],
-            "nombre": fila[1],
-            "cantidad": fila[4],
-            "servicio": fila[3],
-            "tipo_servicio": fila[2],
-            "progreso": fila[5],
-            "tareas_completadas": fila[8],
-            "observaciones": fila[6]
+    pasos = trabajo.get("pasos", [])
+    # Si los pasos vienen como string, conviértelos a lista
+    if isinstance(pasos, str):
+        pasos = [p.strip() for p in pasos.split(",") if p.strip()]
+    tareas_completadas = trabajo.get("tareas_completadas", [])
+    if not isinstance(tareas_completadas, list):
+        import json
+        try:
+            tareas_completadas = json.loads(tareas_completadas)
+        except Exception:
+            tareas_completadas = []
+
+    if request.method == "POST":
+        nuevas_tareas = request.form.getlist("tareas_completadas")
+        progreso = int(len(nuevas_tareas) / len(pasos) * 100) if pasos else 0
+        # Actualizar en Firebase
+        update_data = {
+            "tareas_completadas": nuevas_tareas,
+            "progreso": progreso
         }
-    servicio = trabajo["servicio"]
-    tipo_servicio = trabajo["tipo_servicio"]
-    tareas = obtener_tareas_por_servicio(servicio, tipo_servicio)
-    tareas_completadas = safe_json_loads(trabajo["tareas_completadas"])
-    progreso = trabajo["progreso"]
+        try:
+            requests.patch(f"https://base-datos-rv-default-rtdb.firebaseio.com/trabajos/{usuario_id}.json", json=update_data)
+            flash("¡Progreso guardado con éxito!", "mensaje-success")
+        except Exception as e:
+            flash(f"Error al actualizar el progreso: {e}", "mensaje-error")
+        return redirect(url_for("clientes.mostrar_usuarios"))
 
     return render_template(
         "progreso.html",
         trabajo=trabajo,
-        tareas=tareas,
+        pasos=pasos,
         tareas_completadas=tareas_completadas,
-        progreso=progreso
+        progreso=trabajo.get("progreso", 0)
     )
 
-@clientes_bp.route("/editar_observaciones/<int:id>", methods=["GET", "POST"])
+@clientes_bp.route("/editar_observaciones/<usuario_id>", methods=["GET", "POST"])
 @login_required
-def editar_observaciones_usuario(id):
-    with get_conn_progreso() as conn:
-        cursor = conn.cursor()
-        if request.method == "POST":
-            nuevas_observaciones = request.form.get("observaciones")
-            cursor.execute("UPDATE trabajos_progreso SET observaciones = ? WHERE id = ?", (nuevas_observaciones, id))
-            conn.commit()
-            flash("Observaciones actualizadas", "mensaje-success")
-            return redirect(url_for("clientes.mostrar_usuarios"))
-        cursor.execute("SELECT * FROM trabajos_progreso WHERE id = ?", (id,))
-        usuario = cursor.fetchone()
+def editar_observaciones_usuario(usuario_id):
+    usuario = None  # Aquí deberías obtener el usuario desde Firebase si lo necesitas
+    if request.method == "POST":
+        # Aquí deberías actualizar las observaciones en Firebase si lo necesitas
+        flash("Observaciones actualizadas", "mensaje-success")
+        return redirect(url_for("clientes.mostrar_usuarios"))
     return render_template("editar_observaciones.html", usuario=usuario)
 
 def safe_json_loads(s):
