@@ -15,35 +15,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Guardar datos
 export function guardarDato(ruta, dato) {
   return set(ref(db, ruta), dato);
 }
 
-// Leer datos una vez
 export function leerDato(ruta) {
-  return get(ref(db, ruta)).then(snapshot => {
-    if (snapshot.exists()) {
-      return snapshot.val();
-    } else {
-      return null;
-    }
-  });
+  return get(ref(db, ruta)).then(snapshot => snapshot.exists() ? snapshot.val() : null);
 }
 
-// Escuchar cambios en tiempo real
 export function escucharDato(ruta, callback) {
-  onValue(ref(db, ruta), (snapshot) => {
-    callback(snapshot.val());
-  });
+  onValue(ref(db, ruta), (snapshot) => callback(snapshot.val()));
 }
 
-// Agregar un nuevo elemento a una lista
 export function agregarDato(ruta, dato) {
   return push(ref(db, ruta), dato);
 }
 
-// Inicializar usuarios
 export function inicializarUsuarios() {
   const usuarios = {
     Thomas: { password: "1108" },
@@ -53,7 +40,6 @@ export function inicializarUsuarios() {
   return guardarDato('usuarios', usuarios);
 }
 
-// Registrar un nuevo trabajo
 export function registrarTrabajo(trabajo) {
   return push(ref(db, 'trabajos'), trabajo);
 }

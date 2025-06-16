@@ -7,17 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-{% extends "base.html" %}
-{% block title %}Registrar Trabajo{% endblock %}
-{% block content %}
-<div class="d-flex justify-content-end mb-3">
-    <form action="{{ url_for('auth.logout') }}" method="get">
-        <button type="submit" class="btn btn-outline-danger">Cerrar sesión</button>
-    </form>
-</div>
+{% include "header.html" %}
 <div class="card p-4">
     <h1 class="mb-4">Registrar Trabajo</h1>
-    <form method="POST">
+    <form id="form-trabajo" autocomplete="off" method="POST">
         <div class="mb-3">
             <label class="form-label">Nombre</label>
             <input type="text" id="nombre" name="nombre" class="form-control" required>
@@ -39,10 +32,10 @@
             <select id="servicio" name="servicio" class="form-select" required>
                 <option value="" disabled selected>Selecciona un servicio</option>
                 {% for s in servicios_digitales %}
-                <option value="{{ s }}" data-tipo="digital">{{ s }}</option>
+                <option value="{{ s }}" data-tipo="digital" style="display:none;">{{ s }}</option>
                 {% endfor %}
                 {% for s in servicios_fisicos %}
-                <option value="{{ s }}" data-tipo="fisico">{{ s }}</option>
+                <option value="{{ s }}" data-tipo="fisico" style="display:none;">{{ s }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -52,10 +45,6 @@
         </div>
         <button type="submit" class="btn btn-primary w-100">Registrar</button>
     </form>
-    <div class="mt-3 d-flex gap-2">
-        <a href="{{ url_for('clientes.mostrar_usuarios') }}" class="btn btn-info">Ver trabajos en progreso</a>
-        <a href="{{ url_for('registros.mostrar_registros') }}" class="btn btn-secondary">Ver trabajos archivados</a>
-    </div>
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -64,20 +53,27 @@ document.addEventListener("DOMContentLoaded", function() {
     // Guarda las opciones originales
     const opcionesOriginales = Array.from(servicio.options);
 
-    tipoServicio.addEventListener('change', function() {
+    function filtrarServicios() {
         const tipo = tipoServicio.value;
-        // Limpia las opciones
-        servicio.innerHTML = '<option value="" disabled selected>Selecciona un servicio</option>';
-        // Agrega solo las opciones del tipo seleccionado
+        // Oculta todas las opciones excepto la de placeholder
         opcionesOriginales.forEach(opt => {
-            if(opt.dataset.tipo === tipo) {
-                servicio.appendChild(opt.cloneNode(true));
+            if (opt.value === "") {
+                opt.selected = true;
+                opt.style.display = "";
+            } else if (opt.dataset.tipo === tipo) {
+                opt.style.display = "";
+            } else {
+                opt.style.display = "none";
             }
         });
-    });
+        servicio.value = "";
+    }
+
+    tipoServicio.addEventListener('change', filtrarServicios);
+
+    // Al cargar la página, oculta todos los servicios menos el placeholder
+    filtrarServicios();
 });
 </script>
-{% endblock %}
 </body>
-</html>
 </html>

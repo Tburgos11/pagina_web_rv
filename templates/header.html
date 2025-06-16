@@ -1,0 +1,42 @@
+<header class="header">
+    <div class="nav">
+        <button id="menu-toggle" aria-label="Abrir menú">
+            &#9776;
+        </button>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='LOGO_SIN_FONDO.png') }}" alt="Logo RV">
+            <span>Rv - Publicidad Diseño & Impresión</span>
+        </div>
+    </div>
+    <ul id="menu-dropdown" style="display:none; position:absolute; top:70px; left:0; background:#1e293b; width:220px; box-shadow:2px 4px 16px rgba(0,0,0,0.13); border-radius:0 0 12px 0; z-index:2002; list-style:none; margin:0; padding:0;">
+        <li><a href="{{ url_for('clientes.index') }}" class="menu-link" style="display:block; color:#fff; text-decoration:none; padding:18px 32px; font-weight:600; font-size:1.1em; border-bottom:1px solid #334155;">Registrar Trabajo</a></li>
+        <li><a href="{{ url_for('clientes.mostrar_usuarios') }}" class="menu-link" style="display:block; color:#fff; text-decoration:none; padding:18px 32px; font-weight:600; font-size:1.1em; border-bottom:1px solid #334155;">Trabajos en progreso</a></li>
+        <li><a href="{{ url_for('registros.mostrar_registros') }}" class="menu-link" style="display:block; color:#fff; text-decoration:none; padding:18px 32px; font-weight:600; font-size:1.1em;">Registros</a></li>
+    </ul>
+    <script>
+    // filepath: /workspaces/pagina_web_rv/templates/header.html (menu hamburguesa)
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('menu-toggle');
+        const dropdown = document.getElementById('menu-dropdown');
+        const links = dropdown.querySelectorAll('.menu-link');
+        function closeMenu() { dropdown.style.display = 'none'; }
+        function openMenu() { dropdown.style.display = 'block'; }
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+        document.body.addEventListener('click', function() { closeMenu(); });
+        dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+        // Navegación condicional
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (window.location.pathname === link.getAttribute('href')) {
+                    e.preventDefault();
+                    closeMenu();
+                }
+            });
+        });
+    });
+    </script>
+</header>
+

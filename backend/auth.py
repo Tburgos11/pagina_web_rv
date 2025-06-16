@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.security import check_password_hash
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 import requests
 
 auth_bp = Blueprint('auth', __name__)
@@ -18,7 +17,6 @@ def init_login_manager(app):
 
     @login_manager.user_loader
     def load_user(user_id):
-        # Buscar el usuario en Firebase por su id (username)
         try:
             resp = requests.get(FIREBASE_USERS_URL)
             if resp.status_code == 200:
@@ -45,13 +43,11 @@ def login():
                         user = User(id_=username, username=username, password=password)
                         login_user(user)
                         flash("Inicio de sesión exitoso", "mensaje-exito")
-                        print("Redirigiendo a index...")  # Depuración
                         return redirect(url_for("index"))
                 flash("Usuario o contraseña incorrectos", "mensaje-error")
             else:
                 flash(f"Error Firebase: {resp.status_code} {resp.text}", "mensaje-error")
         except Exception as e:
-            print("Error al conectar con Firebase:", e)
             flash(f"Error al conectar con la base de datos: {e}", "mensaje-error")
     return render_template("login.html")
 

@@ -1,4 +1,3 @@
-import os
 import requests
 
 FIREBASE_SERVICIOS_URL = "https://base-datos-rv-default-rtdb.firebaseio.com/servicios"

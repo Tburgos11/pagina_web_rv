@@ -8,10 +8,8 @@
     {% endblock %}
 </head>
 <body>
-{% extends "base.html" %}
-{% block title %}Trabajos registrados{% endblock %}
-{% block content %}
-<div class="container" style="max-width: 1100px; margin: 0 auto;">
+{% include "header.html" %}
+<div class="container" style="max-width: 1400px; margin: 0 auto;">
     <h2 class="mb-4" style="color: var(--color-1); text-align: center; letter-spacing: 1px;">Trabajos registrados</h2>
     <div style="background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(255, 109, 31, 0.07); padding: 24px;">
         <table class="table table-striped" style="margin-bottom: 0;">
@@ -38,9 +36,9 @@
                     <td>{{ usuario["fecha_de_solicitud"] }}</td>
                     <td>
                         <div class="progress-bar" 
-                             style="cursor:pointer;" 
+                             style="cursor:pointer; position: relative;" 
                              data-progreso-url="{{ url_for('clientes.progreso', usuario_id=usuario['id']) }}">
-                            <div class="progress-bar-fill" style="width: {{ usuario['progreso'] }}%;">
+                            <div class="progress-bar-fill" style="width: {{ usuario['progreso'] }}%; left: 0;">
                                 <span class="progress-bar-number">{{ usuario["progreso"] }}%</span>
                             </div>
                         </div>
@@ -53,6 +51,8 @@
                 {% endfor %}
             </tbody>
         </table>
+        <!-- Elimina el bloque de botones debajo de la tabla -->
+        <!--
         <div style="display: flex; justify-content: flex-start; gap: 16px; margin-top: 32px;">
             <a href="{{ url_for('clientes.index') }}">
                 <button type="button" style="background: linear-gradient(90deg, var(--color-1) 60%, var(--color-2) 100%); color: #fff; border: none; border-radius: 5px; padding: 8px 18px; font-size: 1rem; cursor: pointer; font-weight: 500; box-shadow: 0 2px 6px rgba(255, 109, 31, 0.08); transition: background 0.2s;">
@@ -65,6 +65,7 @@
                 </button>
             </a>
         </div>
+        -->
     </div>
 </div>
 <script>
@@ -77,7 +78,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 </script>
-{% endblock %}
 </body>
 </html>
 

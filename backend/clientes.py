@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required, current_user
+from flask_login import login_required
 from .servicios import leer_servicios, obtener_tareas_por_servicio
 import requests
 from datetime import datetime
@@ -20,7 +20,6 @@ def index():
         tipo_servicio = request.form.get("tipo_servicio")
         observaciones = request.form.get("observaciones", "")
         fecha_de_solicitud = datetime.now().strftime("%d/%m/%Y")
-        # Obtener los pasos/tareas del servicio seleccionado
         pasos = obtener_tareas_por_servicio(servicio, tipo_servicio)
         trabajo = {
             "nombre": nombre,
@@ -30,7 +29,7 @@ def index():
             "observaciones": observaciones,
             "fecha_de_solicitud": fecha_de_solicitud,
             "progreso": 0,
-            "pasos": pasos  # Guardar los pasos/tareas como parte del trabajo
+            "pasos": pasos
         }
         try:
             resp = requests.post(FIREBASE_TRABAJOS_URL, json=trabajo)
@@ -51,11 +50,9 @@ def mostrar_usuarios():
         resp = requests.get(FIREBASE_TRABAJOS_URL)
         if resp.status_code == 200 and resp.json():
             data = resp.json()
-            # data es un dict con id aleatorio como clave
             for key, value in data.items():
                 value["id"] = key
                 trabajos.append(value)
-            # Ordenar por fecha_de_solicitud (más reciente primero)
             trabajos.sort(key=lambda t: datetime.strptime(t.get("fecha_de_solicitud", "01/01/1970"), "%d/%m/%Y"), reverse=True)
     except Exception as e:
         flash(f"Error al obtener trabajos: {e}", "mensaje-error")
@@ -64,7 +61,6 @@ def mostrar_usuarios():
 @clientes_bp.route("/progreso/<usuario_id>", methods=["GET", "POST"])
 @login_required
 def progreso(usuario_id):
-    # Obtener el trabajo desde Firebase
     trabajo = {}
     try:
         resp = requests.get(f"https://base-datos-rv-default-rtdb.firebaseio.com/trabajos/{usuario_id}.json")
@@ -76,7 +72,6 @@ def progreso(usuario_id):
         return redirect(url_for("clientes.mostrar_usuarios"))
 
     pasos = trabajo.get("pasos", [])
-    # Si los pasos vienen como string, conviértelos a lista
     if isinstance(pasos, str):
         pasos = [p.strip() for p in pasos.split(",") if p.strip()]
     tareas_completadas = trabajo.get("tareas_completadas", [])
@@ -90,7 +85,6 @@ def progreso(usuario_id):
     if request.method == "POST":
         nuevas_tareas = request.form.getlist("tareas_completadas")
         progreso = int(len(nuevas_tareas) / len(pasos) * 100) if pasos else 0
-        # Actualizar en Firebase
         update_data = {
             "tareas_completadas": nuevas_tareas,
             "progreso": progreso
@@ -113,9 +107,8 @@ def progreso(usuario_id):
 @clientes_bp.route("/editar_observaciones/<usuario_id>", methods=["GET", "POST"])
 @login_required
 def editar_observaciones_usuario(usuario_id):
-    usuario = None  # Aquí deberías obtener el usuario desde Firebase si lo necesitas
+    usuario = None
     if request.method == "POST":
-        # Aquí deberías actualizar las observaciones en Firebase si lo necesitas
         flash("Observaciones actualizadas", "mensaje-success")
         return redirect(url_for("clientes.mostrar_usuarios"))
     return render_template("editar_observaciones.html", usuario=usuario)

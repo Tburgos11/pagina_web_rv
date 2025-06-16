@@ -26,8 +26,7 @@
     </style>
 </head>
 <body>
-    {% extends "base.html" %}
-    {% block title %}Progreso del trabajo{% endblock %}
+    {% include "header.html" %}
     {% block content %}
     <div class="container" style="max-width: 700px; margin: 0 auto;">
         <h2 class="mb-4" style="color: var(--color-1); text-align: center;">Progreso del trabajo</h2>
@@ -36,10 +35,9 @@
             <p><strong>Servicio:</strong> {{ trabajo["servicio"] }}</p>
             <p><strong>Tipo de Servicio:</strong> {{ trabajo["tipo_servicio"] }}</p>
             <p><strong>Progreso:</strong>
-                <div class="progress-bar" style="margin: 8px 0;">
-                    <div class="progress-bar-fill" style="width: {{ progreso }}%;">
-                        <span class="progress-bar-number">{{ progreso }}%</span>
-                    </div>
+                <div class="progress-bar" style="margin: 8px 0; position: relative;">
+                    <div class="progress-bar-fill" id="progress-bar-fill" style="width: {{ progreso }}%;"></div>
+                    <span class="progress-bar-number" id="progress-bar-number">{{ progreso }}%</span>
                 </div>
             </p>
             <form method="post" id="form-progreso">
@@ -66,7 +64,9 @@
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         const checkboxes = Array.from(document.querySelectorAll('.paso-checkbox'));
-        // Inicializa el estado de los checkboxes según la lógica de orden
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const progressBarNumber = document.getElementById('progress-bar-number');
+
         function actualizarCheckboxes() {
             for (let i = 0; i < checkboxes.length; i++) {
                 if (i === 0) {
@@ -76,24 +76,33 @@
                 }
             }
         }
-        // Al hacer click en un checkbox
+
+        function actualizarBarra() {
+            const total = checkboxes.length;
+            const checked = checkboxes.filter(cb => cb.checked).length;
+            const porcentaje = total ? Math.round((checked / total) * 100) : 0;
+            progressBarFill.style.width = porcentaje + "%";
+            progressBarNumber.textContent = porcentaje + "%";
+        }
+
         checkboxes.forEach((checkbox, idx) => {
             checkbox.addEventListener('change', function() {
                 if (checkbox.checked) {
-                    // Si se marca, marca todos los anteriores
                     for (let i = 0; i < idx; i++) {
                         checkboxes[i].checked = true;
                     }
                 } else {
-                    // Si se desmarca, desmarca todos los posteriores
                     for (let i = idx + 1; i < checkboxes.length; i++) {
                         checkboxes[i].checked = false;
                     }
                 }
                 actualizarCheckboxes();
+                actualizarBarra();
             });
         });
+
         actualizarCheckboxes();
+        actualizarBarra();
     });
     </script>
     {% endblock %}
